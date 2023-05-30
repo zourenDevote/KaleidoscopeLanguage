@@ -52,7 +52,7 @@
 >
 > **ifstmt** ::= **IF** **expr** **THEN**  **statement** (**ELSE** **statement** ) ?
 >
-> **forstmt** ::= **FOR** **vardef** '=' **expr** ',' **expr**, (**expr**)? **IN** '{' **statements** '}'
+> **forstmt** ::= **FOR** (**iddef** '=' **expr**)? ',' （**expr**）? ','  (**expr**)? **IN** '{' **statements** '}'
 >
 > **whilestmt** ::= **WHILE** **expr** **IN** '{' **statements** '}' 
 >
@@ -62,40 +62,39 @@
 >
 > **expr** ::= **logicexpr**
 >
-> **logicexpr** ::= **equexpr** (('>' | '<' | '>=' | '<=' | '==' | '!=') **equexpr**)?
+> **logicexpr** ::= **binexpr1** (('>' | '<' | '>=' | '<=' | '==' | '!=') **binexpr1**)?
 >
->
-> **binexpr1** ::= **binexpr2** (('+' | '-') **binexpr2**)?
->
-> **binexpr2** ::= **unaryexpr** (('/'|'*') **unaryexpr**)?
->
-> **unaryexpr** ::= ('-'|'!')* **primaryexpr**
->
-> **primaryexpr** ::= '(' **expr** ')'
->
-> ​						 ::= **idref**
->
-> ​						 ::= **callexpr**
->
-> ​						 ::= **number**
->
-> **idref** ::= **ID** ('[' **expr** ']')*
->
-> **callexpr** ::= **ID** '(' (**expr** (, **expr**)* )? ')'
->
-> **ID** ::= \[a-zA-Z\]\[0-9_a-zA-Z\]*
->
-> **number** ::= **DOUBLENUMBER**
->
-> ​				::= **INTNUMBER**
->
-> ​				::= **TRUE**
->
-> ​				::= **FALSE**
->
-> **doublenumber** ::= [0-9] '.' [0-9]+
->
-> **intnumber** ::= ('0'|\[1-9\]\[0-9\]*)					
+>**binexpr1** ::= **binexpr2** (('+' | '-') **binexpr2**)?
+> 
+>**binexpr2** ::= **unaryexpr** (('/'|'*') **unaryexpr**)?
+> 
+>**unaryexpr** ::= ('-'|'!')* **primaryexpr**
+> 
+>**primaryexpr** ::= '(' **expr** ')'
+> 
+>​						 ::= **idref**
+> 
+>​						 ::= **callexpr**
+> 
+>​						 ::= **number**
+> 
+>**idref** ::= **ID** ('[' **expr** ']')*
+> 
+>**callexpr** ::= **ID** '(' (**expr** (',' **expr**)* )? ')'
+> 
+>**ID** ::= \[a-zA-Z\]\[0-9_a-zA-Z\]*
+> 
+>**number** ::= **DOUBLENUMBER**
+> 
+>​				::= **INTNUMBER**
+> 
+>​				::= **TRUE**
+> 
+>​				::= **FALSE**
+> 
+>**doublenumber** ::= [0-9]+ '.' [0-9]+
+> 
+>**intnumber** ::= ('0'|\[1-9\]\[0-9\]*)					
 
 注意：
 
@@ -104,6 +103,8 @@
 > 语法糖
 >
 > **()** : 表示子表达式，表示一个匹配单元
+>
+> **[]**: 表示范围
 >
 > ***** : 表示匹配零次或多次
 >
@@ -115,7 +116,11 @@
 
 ## 测试用例
 
+int a;
 
+a = -10;
+
+a = 0 - 10;
 
 ## 项目介绍
 

@@ -184,15 +184,15 @@ static int getToken() {
     return ThisChar;
 }
 
-void unitTest(const char* filepath) {
-    openFile(filepath);
-    int tok;
-    tok = getToken();
-    while(tok != tok_eof) {
-        printf("Token value = %d, Row %d, Col %d\n", tok, Row, Col);
-        tok = getToken();
-    }
-}
+// void unitTest(const char* filepath) {
+//     openFile(filepath);
+//     int tok;
+//     tok = getToken();
+//     while(tok != tok_eof) {
+//         printf("Token value = %d, Row %d, Col %d\n", tok, Row, Col);
+//         tok = getToken();
+//     }
+// }
 
 static int CurTok;
 static int CurrSeek;
@@ -216,6 +216,8 @@ std::vector<int> lookUp(int n) {
 
     return LookUpToks;
 }
+
+
 
 /////////////////////////////////////////////////////////
 /// Parser
@@ -382,7 +384,7 @@ FuncDefAST *parseFuncDef() {
         }
         funcDef->setRetTy((Token)CurTok);
     }
-
+    
     funcDef->setStmt(parseBlockStmt());
 
     ParamMap.clear();
@@ -486,7 +488,6 @@ ParamAST *parseParam() {
     while(lookUp(1)[0] == '[') {
         // eat '['
         getNextToken();
-
         if(lookUp(1)[0] == ']') {
             // eat ']'
             getNextToken();
@@ -557,7 +558,10 @@ StatementAST *parseStatement() {
             }
             return parseExprStmt();
         }
+        // return;
         case tok_return: return parseReturnStmt();
+        // 10 + a;
+        // 20.0 + b;
         case tok_int_number:
         case tok_double_number: {
             return parseExprStmt();
@@ -619,6 +623,7 @@ StatementAST *parseForStmt() {
     // eat for
     getNextToken();
 
+    // for (id = expr)? , expr? , expr? in statement
     ForStmtAST *forStmt = new ForStmtAST();
 
     if(lookUp(1)[0] == tok_id) {
@@ -650,6 +655,8 @@ StatementAST *parseForStmt() {
     return (StatementAST*)forStmt;
 }
 
+/// @brief  while expr in statement
+/// @return 
 StatementAST *parseWhileStmt() {
     // eat while
     getNextToken();

@@ -9,7 +9,7 @@ const char WhileCondName[] = "while.cond";
 const char WhileBodyName[] = "while.body";
 const char AfterBBName[] = "after";
 
-/// 多维数组转化为一维数组
+
 int calcuArraySize(const std::vector<int>& ArrayDim) {
     int len = 0;
     auto iter = ArrayDim.crbegin();
@@ -47,6 +47,8 @@ void IRGenerator::init() {
     DoublePtrType = Type::getDoublePtrTy(TheContext);
     TrueConst = ConstantInt::getTrue(TheContext);
     FalseConst = ConstantInt::getFalse(TheContext);
+    DoubleZero = llvm::ConstantFP::get(DoubleType, 0.0);
+    IntZero = llvm::ConstantInt::get(IntType, 0);
 }
 
 
@@ -90,6 +92,7 @@ void IRGenerator::visit(VarDefAST *node) {
         varTy = DoubleType;
     }
 
+    // int a, b, c;
     if(isGlobal) {
         for(auto *decl : node->VarDecls) {
             if(decl->ArrayDim.size() != 0) {
@@ -102,8 +105,12 @@ void IRGenerator::visit(VarDefAST *node) {
                     init = ConstantInt::get(varTy, 0);
                 }
                 ArrayType *arrayTy = ArrayType::get(varTy, len);
-                GlobalVariable *gloArray = new GlobalVariable(*TheModule, arrayTy, false, 
-                    GlobalVariable::ExternalLinkage, ConstantArray::get(arrayTy, init), decl->VarName.c_str());
+                GlobalVariable *gloArray = new GlobalVariable(*TheModule,       /* 要把变量加到哪个module中 */
+                                                              arrayTy,          /* 变量类型 */
+                                                              false,            /* 是否是常量 */
+                                                              GlobalVariable::ExternalLinkage, 
+                                                              ConstantArray::get(arrayTy, init),
+                                                              decl->VarName.c_str()); /* 变量名 */
                 decl->setLLVMValue(gloArray);
             }
             else {
@@ -118,7 +125,7 @@ void IRGenerator::visit(VarDefAST *node) {
             if(decl->ArrayDim.size() != 0) {
                 int len = calcuArraySize(decl->ArrayDim);
                 Type* arrayType = ArrayType::get(varTy, len);
-                AllocaInst* intArray = TheBuilder->CreateAlloca(arrayType, nullptr, "myArray");
+                AllocaInst* intArray = TheBuilder->CreateAlloca(arrayType, nullptr, decl->VarName.c_str());
                 decl->setLLVMValue(intArray);
             }
             else {
@@ -197,6 +204,7 @@ void IRGenerator::visit(FuncExternAST *node) {
     FunctionType* externFuncType = FunctionType::get(retTy, params, false);
 
     // 创建外部函数声明
+    // declare void @func(i32);
     Function* externFunc = Function::Create(externFuncType, Function::ExternalLinkage, node->FuncName, *TheModule);
 
     node->setLLVMFunction(externFunc);
@@ -239,8 +247,14 @@ void IRGenerator::visit(FuncDefAST *node) {
     FunctionType* FuncType = FunctionType::get(retTy, params, false);
 
     // 创建外部函数声明
+    // define void @func(i32);
     CurFunction = Function::Create(FuncType, Function::ExternalLinkage, node->FuncName, *TheModule);
 
+    // extern a(int b);
+    // def a(int b) {
+    //  int c;
+    //  c = b;
+    // }
     int i = 0;
     for (auto arg = CurFunction->arg_begin(); arg != CurFunction->arg_end(); ++arg) {
         Argument* argument = &*arg;
@@ -253,13 +267,13 @@ void IRGenerator::visit(FuncDefAST *node) {
     TheBuilder->SetInsertPoint(entryBB);
     visit(node->Statements);
 
-    // 获取函数的基本块列表
-    BasicBlock* lastBB = &CurFunction->getBasicBlockList().back();
+    // // 获取函数的基本块列表
+    // BasicBlock* lastBB = &CurFunction->getBasicBlockList().back();
 
-    // 检查最后一个基本块是否以ReturnInst指令结尾
-    if (lastBB->getTerminator()->getOpcode() != Instruction::Ret) {
-        TheBuilder->CreateRetVoid();
-    }
+    // // 检查最后一个基本块是否以ReturnInst指令结尾
+    // if (lastBB->getTerminator()->getOpcode() != Instruction::Ret) {
+    //     TheBuilder->CreateRetVoid();
+    // }
 }
 
 
@@ -310,26 +324,32 @@ void IRGenerator::visit(AssignStmtAST *node){
     visit(node->Id);
     notLoad = false;
     Value* lhs = CalcValue;
+    // ExprAST *
     visit(node->Expr);
     CalcValue = TheBuilder->CreateStore(CalcValue, lhs);
 }
 
 void IRGenerator::visit(ReturnStmtAST *node){
+    // return 1+10;
+    // ret 11
     if(node->Expr) {
         visit(node->Expr);
         TheBuilder->CreateRet(CalcValue);
     }
+    // return
+    // ret
     else {
         TheBuilder->CreateRetVoid();
     }
 }
-
+// { ... }
 void IRGenerator::visit(BlockStmtAST *node){
     for(auto *stmt : node->Statements) {
         visit(stmt);
     }
 }
 
+//
 void IRGenerator::visit(IfStmtAST *node){
     visit(node->Cond);
     BasicBlock *IfBody = BasicBlock::Create(TheContext, IfBodyName, CurFunction);
@@ -343,12 +363,14 @@ void IRGenerator::visit(IfStmtAST *node){
         TheBuilder->SetInsertPoint(ElseBody);
         visit(node->ElseStatement);
         TheBuilder->CreateBr(After);
+        TheBuilder->SetInsertPoint(After);
     }
     else {
         TheBuilder->CreateCondBr(CalcValue, IfBody, After);
         TheBuilder->SetInsertPoint(IfBody);
         visit(node->Statement);
         TheBuilder->CreateBr(After);
+        TheBuilder->SetInsertPoint(After);
     }
 }
 
@@ -373,7 +395,8 @@ void IRGenerator::visit(ForStmtAST *node){
 
     TheBuilder->SetInsertPoint(ForBody);
     visit(node->Statement);
-
+    // for i = 0 , i < 10 , 1 in
+    // i = i + 1
     if(node->Id && node->StepExpr) {
         visit(node->Id);
         Value *lhs = CalcValue;
@@ -452,7 +475,9 @@ void IRGenerator::visit(BinExprAST *node) {
     visit(node->Lhs);
     Value* lhs = CalcValue;
     visit(node->Rhs);
-
+    // float a;
+    // int b;
+    // a + b;
     bool isDouble = false;
     // 整数浮点类型转换
     if(lhs->getType() != CalcValue->getType()) {
@@ -567,15 +592,24 @@ void IRGenerator::visit(BinExprAST *node) {
 
 void IRGenerator::visit(UnaryExprAST *node) {
     visit(node->Expr);
-    // switch (node->Op)
-    // {
-    //     case Sub : {
-    //         break;
-    //     }
-    //     case Not : {
-
-    //     }
-    // }
+    switch (node->Op)
+    {
+        case Sub : {
+            // CalcValue = 0 - CalcValue
+            if(CalcValue->getType()->isDoubleTy()) {
+                Value *rhs = CalcValue;
+                CalcValue = TheBuilder->CreateFSub(DoubleZero, rhs);
+            }
+            else {
+                Value *rhs = CalcValue;
+                CalcValue = TheBuilder->CreateNSWSub(IntZero, rhs);
+            }
+            break;
+        }
+        case Not : {
+            break;
+        }
+    }
 }
 
 void IRGenerator::visit(IdRefAST *node) {
@@ -640,16 +674,22 @@ void IRGenerator::visit(IdRefAST *node) {
         // }
         std::vector<Value*> indexes;
         bool load = notLoad;
+        // a[10][b + 1] = 0;
         notLoad = false;
         while(iter != end) {
+            // *iter = ExprAST*
             visit(*iter);
             indexes.push_back(CalcValue);
             iter++;
         }
         notLoad = load;
         // 根据偏移量获得数组
+        // int a[10];
+        // int *p = a + 3;
         CalcValue = TheBuilder->CreateGEP(nullptr, ptr, makeArrayRef(indexes));
         CalcValue = TheBuilder->CreateBitCast(CalcValue, ptrTy);
+        // a[3] = 1;
+        // a[3] + 1;
         if(!notLoad) {
             CalcValue = TheBuilder->CreateLoad(ldTy, CalcValue);
         }
@@ -657,6 +697,7 @@ void IRGenerator::visit(IdRefAST *node) {
 }
 
 void IRGenerator::visit(CallExprAST *node) {
+    // func(10, 1+10, 3+2);
     std::vector<Value*> args;
     for(auto* param : node->Params) {
         visit(param);

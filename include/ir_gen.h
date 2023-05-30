@@ -15,21 +15,25 @@
 
 using namespace llvm;
 
+/// op1 = op2 operator op3
+/// op4 = - op1
 /// @brief 这个函数遍历AST生成IR代码
 class IRGenerator {
 private:
     LLVMContext TheContext;
     Module *TheModule;
     IRBuilder<> *TheBuilder;
-    Type *IntType;
+    Type *IntType; 
     Type *BoolType;
     Type *DoubleType;
-    Type *VoidType;
+    Type *VoidType; 
     Type *IntPtrType;
     Type *BoolPtrType;
     Type *DoublePtrType;
-    ConstantInt *TrueConst;
-    ConstantInt *FalseConst;
+    Value *TrueConst;
+    Value *FalseConst;
+    Value *DoubleZero; // 浮点数的0.0
+    Value *IntZero;    // 整数的0 
 
     // llvm eval value
     Value *CalcValue;
