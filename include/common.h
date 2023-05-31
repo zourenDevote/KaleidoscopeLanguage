@@ -8,21 +8,29 @@
 /// ast node used in ASTBase, Each type of ast node has its own unique id.
 /// ------------------------------------------------------------------------
 enum KAstId {
-    ProgramID,          /* This type express program */
-    VarDefId,           /* This type express var define and var declare */
-    FuncDefId,          /* This type express function define and function declare */
-    FuncParamId,        /* This type express function param define */
-    SwitchId,           /* This type express switch statement */
-    IfStmtId,           /* This type express if statement */
-    ForStmtId,          /* This type express for statement  */
-    WhileStmtId,        /* This type epxress while statement */
-    InitializeId,       /* This type express var or struct object initialized expression */
-    ReturnStmtId,       /* This type express return statement */
-    BreakStmtId,        /* This type express break statement */
+    ProgramID,          /* This type express program                                        */
+    VarDefId,           /* This type express var define and var declare                     */
+    FuncId,             /* This type express function define and function declare           */
+    FuncParamId,        /* This type express function param define                          */
+    SwitchId,           /* This type express switch statement                               */
+    IfStmtId,           /* This type express if statement                                   */
+    ForStmtId,          /* This type express for statement                                  */
+    WhileStmtId,        /* This type epxress while statement                                */
+    InitializeId,       /* This type express var or struct object initialized expression    */
+    ReturnStmtId,       /* This type express return statement                               */
+    BreakStmtId,        /* This type express break statement                                */
+
+    BinExprId,          /* This type express bin expr                                       */
+    UnaryExprId,        /* This type express unary expr                                     */
+    LiteralId,          /* This type express literal                                        */
+    NumberId,           /* This type express number literal                                 */
+    IdRefId,            /* This type express id ref                                         */
+    IdIndexedRefId,     /* This type express id indexed ref                                 */
+    CallId,             /* This type express function call                                  */
 
     /* Low priority */
-    LambdaId,           /* This type express lambda expression */
-    StructId,           /* This type express struct type define */
+    LambdaId,           /* This type express lambda expression                              */
+    StructId,           /* This type express struct type define                             */
 };
 
 
