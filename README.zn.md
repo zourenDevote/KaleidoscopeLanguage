@@ -50,6 +50,8 @@ git commit -m "<type> : message"
 
 ## 编译流程
 
+![编译顺序](./doc/pic2.png)
+
 ## 编译
 
 在编译之前，需要下载下面的依赖
