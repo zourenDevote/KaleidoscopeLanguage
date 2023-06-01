@@ -33,17 +33,63 @@ git commit -m "<type> : message"
 **Token**
 
 ```bash
+ID, DEF, EXTERN, VOID, BOOL, CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, FLOAT, DOUBLE, LITERAL, INUMBER, FNUMBER, IF, FOR, WHILE, RETURN, BREAK, CONTINUE, STRUCT IMPORT CONST, IN, THEN, ELSE, COMMENT, SWITCH, CASE, DEFAULT
 ```
 
 **运算符**
 
 ```bash
-
++ - * / = == != . > >= < <= ! >> >>> << <<< || && | & ^
 ```
 
 **文法**
 
 ```bash
+program : (varDef | funcDef | externDef | importDecl )* EOF
+
+typeDecl : (VOID | CHAR | UCHAR | SHORT | USHORT | INT | UINT | LONG | ULONG | FLOAT | DOUBLE | BOOL)
+
+externDef : (varExtern | funcExtern);
+
+varExtern : EXTERN CONST? typeDecl ID ('['expr']')* ';'
+
+funcExtern : EXTERN ID '(' paramList* ')' (':' typeDecl)? ';'
+
+varDef : typeDecl ID ('['expr']')* ('=' initExpr)? ';'
+
+initExpr : expr | '{' expr (',' (expr | initExpr) )* '}' 
+
+funcDef : DEF ID '(' paramList* ')' (':' typeDecl)? blockStmt
+
+importDecl : IMPORT LITERAL ';'
+
+paramList : paramDecl (',' paramDecl)*
+
+paramDecl : typeDecl (ID ('[' expr ']')* ('[' ']')? )?
+
+stmt : (blockStmt | ifStmt | exprStmt | forStmt | whileStmt | returnStmt | breakStmt | continueStmt | switchStmt )
+
+blockStmt : '{' stmt '}'
+
+ifStmt : IF '(' expr ')' THEN stmt (ELSE stmt)?
+
+exprStmt : expr ';'
+
+forStmt : FOR '(' expr ';' expr ';' expr ')' IN stmt
+
+whileStmt : WHILE '(' expr ')' stmt
+
+returnStmt : RETURN expr? ';'
+
+breakStmt : BREAK ';'
+
+continueStmt : CONTINUE ';'
+
+switchStmt SWITCH '(' expr ')' '{' caseStmt* default? '}'
+
+caseStmt : CASE expr ':' stmt
+
+default : DEFAULT ':' stmt
 ```
 
 ## 测试
