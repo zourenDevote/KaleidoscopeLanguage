@@ -7,8 +7,12 @@
 
 void unitTest(const char* filepath);
 
-/// 解析输入文件生成ast
+/// ----------------------------------------------------
+/// This function is the top function of the parser
+/// 
+/// ----------------------------------------------------
 ProgramAST *parseToGenerateAst(const char* filepath);
+
 
 ProgramAST *parseProgram();
 

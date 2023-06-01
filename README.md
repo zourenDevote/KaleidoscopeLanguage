@@ -1,215 +1,103 @@
-# Kaleidoscope  Compiler
+# Kaleidoscope  Compiler Project
 
-`kaleidoscope`语言是`llvm cookbook`定义的一个简单的语言，基于这个简单的语言基础上，我们进行了一些扩展，其文法如下
+[ZN](./README.zn.md)|[**EN**](./README.md)
 
-## 提交规范
+## About Project
 
-`commit message`格式
+This project is a compiler project that implements a compiled language called **Kaleidoscope**. This language is introduced in the "LLVM Cookbook." Building upon the concepts explained in the book, this project extends the language with additional syntax and supports various types. It aims to create a brand new compiler for the Kaleidoscope language. The purpose of this project is to enhance skills in designing compilation systems and developing compilers. Everyone is welcome to contribute to expanding Kaleidoscope, including grammar, static analysis, optimizations, and other functionalities without limitations.
+
+## Submission Guide
+
+Format of commit message, each commit message has type. There are the following types.
 
 ```bash
-<type>(<scope>): <subject>
+git commit -m "<type> : message"
 ```
 
-feat：新功能（feature）。
+| Type     | Description                                                  |
+| -------- | ------------------------------------------------------------ |
+| feat     | Add new feature                                              |
+| fix      | Fix bug                                                      |
+| docs     | Add documentation                                            |
+| style    | Changed the way the code is written (changes that do not affect how the code works) |
+| refactor | Refactoring (code changes that are not new features or bug fixes) |
+| perf     | Related to optimization, such as improving performance, experience. |
+| test     | Add test case                                                |
+| chore    | Changes to the build process or ancillary tools, such as add a new third party |
+| revert   | Rollback to the previous version                             |
+| merge    | Code merge                                                   |
+| sync     | Bug synchronizing main line or branch                        |
 
-fix/to：修复bug，可以是QA发现的BUG，也可以是研发自己发现的BUG。
+## Grammar Definition
 
-- fix：产生diff并自动修复此问题。适合于一次提交直接修复问题
-- to：只产生diff不自动修复此问题。适合于多次提交。最终修复问题提交时使用fix
-
-docs：文档（documentation）。
-
-style：格式（不影响代码运行的变动）。
-
-refactor：重构（即不是新增功能，也不是修改bug的代码变动）。
-
-perf：优化相关，比如提升性能、体验。
-
-test：增加测试。
-
-chore：构建过程或辅助工具的变动。
-
-revert：回滚到上一个版本。
-
-merge：代码合并。
-
-sync：同步主线或分支的Bug
-
-## 文法定义
-
-**关键字(终结符)**
-
-> EXTERN, DEF, DOUBLE, INT, BOOL, VOID, IF, THEN, ELSE, FOR, WHILE, RETURN, ID, DOUBLENUMBER, INTNUMBER, TRUE, FALSE, EOF(特殊字符)
-
-**运算符**
-
-> +，-， *，/，>, <, >=, <=, ==, !=, !
-
-**文法**
-
-> **program** ::= (**vardef** | **funcdef** | **externdef**)* **EOF**
->
-> **vardef** ::= ( **INT** | **DOUBLE** | **BOOL** ) **ID** ('[' **expr** ']')* ';'
->
-> **funcdef** ::= **DEF** **ID** '(' **paramlist** ')' (':' (**INT** | **DOUBLE** | **VOID** | **BOOL**))? '{' **statements** '}'
->
-> **externdef** ::= **EXTERN** (**vardef** | **funcdecl** )
->
-> **funcdecl** ::= **ID** '(' **paramlist** ')' ( ':' (**INT** | **DOUBLE** | **VOID** | **BOOL** ))? ';'
->
-> **paramlist** ::= ( **param** ( ',' **param** )* )?
->
-> **param** ::= (**INT** | **DOUBLE**) **ID**
->
-> **statements** ::= ( **statement** )*
->
-> **statement** ::= **vardef**
->
-> ​					 ::= **ifstmt** 
->
-> ​					 ::= **forstmt** 
->
-> ​					 ::= **whilestmt** 
->
-> ​					 ::= **exprstmt** 
->
-> ​					 ::= **assignstmt** 
->
-> ​                  ::= **blockstmt**
->
-> ​				  ::= **returnstmt**
->
-> **returnstmt** ::= **RETURN** (**expr**)?
->
-> **blockstmt** ::= '{' **statements** '}'
->
-> **ifstmt** ::= **IF** **expr** **THEN**  **statement** (**ELSE** **statement** ) ?
->
-> **forstmt** ::= **FOR** (**iddef** '=' **expr**)? ',' （**expr**）? ','  (**expr**)? **IN** '{' **statements** '}'
->
-> **whilestmt** ::= **WHILE** **expr** **IN** '{' **statements** '}' 
->
-> **exprstmt** ::= **expr** ';'
->
-> **assignstmt** ::= **idref** '=' **expr** ';'
->
-> **expr** ::= **logicexpr**
->
-> **logicexpr** ::= **binexpr1** (('>' | '<' | '>=' | '<=' | '==' | '!=') **binexpr1**)?
->
->**binexpr1** ::= **binexpr2** (('+' | '-') **binexpr2**)?
-> 
->**binexpr2** ::= **unaryexpr** (('/'|'*') **unaryexpr**)?
-> 
->**unaryexpr** ::= ('-'|'!')* **primaryexpr**
-> 
->**primaryexpr** ::= '(' **expr** ')'
-> 
->​						 ::= **idref**
-> 
->​						 ::= **callexpr**
-> 
->​						 ::= **number**
-> 
->**idref** ::= **ID** ('[' **expr** ']')*
-> 
->**callexpr** ::= **ID** '(' (**expr** (',' **expr**)* )? ')'
-> 
->**ID** ::= \[a-zA-Z\]\[0-9_a-zA-Z\]*
-> 
->**number** ::= **DOUBLENUMBER**
-> 
->​				::= **INTNUMBER**
-> 
->​				::= **TRUE**
-> 
->​				::= **FALSE**
-> 
->**doublenumber** ::= [0-9]+ '.' [0-9]+
-> 
->**intnumber** ::= ('0'|\[1-9\]\[0-9\]*)					
-
-注意：
-
-> 在上面的文法描述中，非TOKEN字符用`''`框起来，TOKEN用加粗大写表示，非终结符用加粗小写表示.
->
-> 语法糖
->
-> **()** : 表示子表达式，表示一个匹配单元
->
-> **[]**: 表示范围
->
-> ***** : 表示匹配零次或多次
->
-> **？**: 表示匹配零次或一次
->
-> **+**: 表示匹配一次或多次
->
-> **|**: 'a'| 'b' 表示匹配字符a或者字符b
-
-## 测试用例
-
-int a;
-
-a = -10;
-
-a = 0 - 10;
-
-## 项目介绍
+**Token**
 
 ```bash
-kaleidoscope
-	| - CMakeLists.txt 	--> 控制编译的cmake脚本文件
-	| - build 			--> 构建目录
-	| - include			--> 头文件目录
-    	| - token.h		--> token的定义
-    	| - parser.h	--> 解析器的定义
-    	| - ir_gen.h    --> IR生成的定义
-    	| - ast.h	 	--> ast的定义
-	| - src				--> 源文件目录
-		| - parser.cpp  --> 解析器的实现
-		| - ir_gen.cpp	--> IR生成的实现
-        | - ast.cpp	    --> ast的实现
-        | - main.cpp	--> 主函数
-    | - test			--> 测试用例文件夹
-    	| ...
+
 ```
 
-## 项目编译命令
-
-目前因为项目借助的llvm12，所以在编译的时候
+**Operator**
 
 ```bash
-sudo apt-get install llvm-12
-sudo apt-get install clang-12
-# 确保有llvm-12 和 clang-12
-# 怎么看?
-clang-12 --version
-llvm-12 --version
+
 ```
 
-
+**Grammar**
 
 ```bash
-$> rm -r build
-$> mkdir build | cd build
-# 如果你要调试
-$> cmake -DCMAKE_BUILD_TYPE=Debug ../
-# 如果不调试的话
+
+```
+
+## Test
+
+## Compilation Process
+
+![compilation process](./doc/pic1.png)
+
+## Build
+
+Dependencies that the project needs
+
+```bash
+sudo apt install llvm-(10|12|14)
+sudo apt install clang-(10|12|14)
+sudo apt install cmake
+```
+
+Build project in Linux,` (Note: Currently the project only supports compilation for Linux)`
+
+```bash
+$> git clone https://github.com/zourenDevote/KaleidoscopeLanguage.git
+$> cd KaleidoscopeLanguage
+$> mkdir build && cd build
 $> cmake ../
-# 构建命令
-$> make -j 16
+$> make -j 'nproc'
+
+# test option
+$> ctest -j 'nproc'
 ```
 
+## Cmake Option
 
+|      Option      |      Value       | Default Value |           Description            |
+| :--------------: | :--------------: | :-----------: | :------------------------------: |
+| CMAKE_BUILD_TYPE | Release \| Debug |    Release    | Release version or Debug version |
 
-## 怎么用
+## Usage
+
+```c
+// helloworld.k
+extern <kaldstd.k>
+
+def main() : int {
+    print("Hello,World!\n");
+    return 0;
+}
+```
 
 ```bash
-./Kaleidoscope test.k -o xxx.ll
-
-clang-12 test.ll kaleidoscope_std.c -o test
-
-./test
+$>./Kaleidoscope helloworld.k -o hello
+$>./hello
+Hello,World!
 ```
 
