@@ -1,48 +1,84 @@
 
+
+#include "cxxopts.hpp"
 #include "parser.h"
-#include "ir_gen.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CommandLine.h"
+#include "global_variable.h"
+
+#include <memory>
+#include <iostream>
 
 
-llvm::cl::opt<std::string> InputFileName(cl::Positional, cl::desc("<input file>"));
-// 这个选项暂时未实现
-llvm::cl::opt<bool> PrintAST("print-ast", cl::desc("Print AST parse tree"));
-llvm::cl::opt<bool> PrintIR("print-ir", cl::desc("Print Bitcode IR"));
-llvm::cl::opt<std::string> OutputFileName("o", cl::desc("Output file"), cl::value_desc("filename"), cl::init("output.ll"));
+using namespace cxxopts;
+
+
+/// @brief parse command line option and init some global variable
+/// @param argc 
+/// @param argv 
+/// @return 
+int parseCmdArgs(int argc, char *argv[]) {
+
+    try {
+        std::unique_ptr<cxxopts::Options> allocated(new cxxopts::Options(argv[0], "kalecc - Kaledioscope compiler"));
+        auto& options = *allocated;
+        options
+            .positional_help("[optional args]")
+            .show_positional_help();
+
+        options
+            .set_width(70)
+            .set_tab_expansion()
+            .add_options()
+            ("i, input", "The sources input file", cxxopts::value<std::vector<std::string>>())
+            ("print-ir", "Print ir generation message", cxxopts::value<bool>()->default_value("false"))
+            ("print-ast", "Print ast of source file", cxxopts::value<bool>()->default_value("false"))
+            ("o, output", "Output file name", cxxopts::value<std::string>()->default_value("a.out"))
+            ("h, help", "Print help");
+    
+        auto result = options.parse(argc, argv);
+
+        if(result.count("help")) {
+            std::cout << options.help({""}) << std::endl;
+            return 0;   
+        }
+
+        if(!result.count("input")) {
+            std::cerr << "No input files was given!" << std::endl;
+            return 1;
+        }
+
+        for(auto file : result["input"].as<std::vector<std::string>>()) {
+            InputFileList.push_back(file);
+        }
+
+        if(result["print-ast"].as<bool>()) {
+            PrintAST = true;
+        }
+
+        if(result["print-ir"].as<bool>()) {
+            PrintIR = true;
+        }
+
+        OutputFileName = result["output"].as<std::string>();
+
+        return 0;
+    }
+    catch (const cxxopts::exceptions::exception& e) {
+        std::cout << "Error parsing options: " << e.what() << std::endl;
+        return 1;
+    }
+}
+
 
 
 int main(int argc, char *argv[]) {
-    cl::ParseCommandLineOptions(argc, argv);
-
-    if(InputFileName.empty()) {
-        fprintf(stderr, "error! no sources code given!\n");
-        exit(-1);
-    }
-
-    auto program = parseToGenerateAst(InputFileName.getValue().c_str());
-
-    IRGenerator generator(OutputFileName.getValue());
-    generator.visit(program);
-
-    // 打印出来
-    llvm::Module *mod = generator.getLLVMModule();
-
-    if(PrintIR.getValue()) {
-        mod->print(llvm::outs(), nullptr);
-    }
-
-
-    // 将模块写入IR文件
-    std::error_code error;
-    llvm::raw_fd_ostream outputStream(OutputFileName.getValue().c_str(), error);
-
-    if (!error) {
-        mod->print(outputStream, nullptr);
-        outputStream.flush();
-    } else {
-        fprintf(stderr, "unable to wirte ir to file");
+    /// parse command line option
+    if(parseCmdArgs(argc, argv)) {
         return 1;
-    }    
+    }
+    
+    /// Pre Analysis
+    
+
+
+    ///  
 }

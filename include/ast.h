@@ -3,12 +3,15 @@
 #ifndef KALEIDSCOPE_AST
 #define KALEIDSCOPE_AST
 
-#include <vector>
+
 #include "common.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Type.h"
 
+#include <vector>
+
+using namespace llvm;
 
 struct LineNo {
     unsigned FileIndex;
@@ -16,6 +19,7 @@ struct LineNo {
     unsigned Col;
 };
 
+class ProgramAST;
 class AstVisitor;
 
 
@@ -34,32 +38,35 @@ protected:
     KAstId Id;
 public:
     using NodeIter = std::vector<ASTBase*>::iterator; 
+    using CNodeIter = std::vector<ASTBase*>::const_iterator; 
+    using RNodeIter = std::vector<ASTBase*>::reverse_iterator;
+    using CRNodeIter = std::vector<ASTBase*>::const_reverse_iterator;
 
     ASTBase(const LineNo&);
 
-   irtualoid accept(AstVisitor *v);
+   virtual void accept(AstVisitor *v);
 
-   oid setId(KAstId id);
-   oid addChild(ASTBase *child);
-   oid setParent(ASTBase *parent);
-   oid setLineNo(const LineNo&);
-   oid setProgram(ProgramAST *prog);
+   void setId(KAstId id);
+   void addChild(ASTBase *child);
+   void setParent(ASTBase *parent);
+   void setLineNo(const LineNo&);
+   void setProgram(ProgramAST *prog);
 
 
 
     bool childEmpty();
     NodeIter begin();
     NodeIter end();
-    NodeIter rbegin();
-    NodeIter rend();
-    const NodeIter& cbegin();
-    const NodeIter& cend();
-    const NodeIter& crbegin();
-    const NodeIter& crend();
-   irtual ASTBase* deepCopy() { return nullptr; }
-    ASTBase *getChild(size_t index);
+    RNodeIter rbegin();
+    RNodeIter rend();
+    CNodeIter cbegin();
+    CNodeIter cend();
+    CRNodeIter crbegin();
+    CRNodeIter crend();
+    virtual ASTBase* deepCopy() { return nullptr; }
+    ASTBase *getChild(unsigned int index);
     LineNo *getLineNo() { return &LineMsg; }
-    ASTBase *getParent() { return parent; }
+    ASTBase *getParent() { return Parent; }
     ProgramAST *getProgram() { return Program; }
     KAstId id() const { return Id; }
 };
@@ -84,13 +91,13 @@ public:
     explicit ProgramAST(const LineNo&);
     /// @brief 添加program的依赖项
     /// @param prog 
-   oid addDependentProg(ProgramAST *prog) { this->DependensProg.push_back(prog); }
+    void addDependentProg(ProgramAST *prog) { this->DependentProg.push_back(prog); }
     /// @brief 获取program的依赖项
     /// @return 
     const std::vector<ProgramAST*>& getDependentProgs() { return this->DependentProg; }
     /// @brief 设置编译状态
     /// @param flag 
-   oid setCompiledFlag(CompiledFlag flag) { CompFlag = flag; }
+    void setCompiledFlag(CompiledFlag flag) { CompFlag = flag; }
     /// @brief 获取编译状态
     /// @return 
     CompiledFlag getCompiledFlag() const { return CompFlag; }
@@ -106,15 +113,18 @@ private:
     KType Type;
     std::vector<int> ArrayDims;
     int ArrayDim;
+    Value *Val;
 public:
     ParamAST(const LineNo&, const std::string&, KType);
 
-   oid addArrayDim(int dim) { ArrayDims.push_back(dim); }
-   oid arrayDimAdd() { ArrayDim++; }
+    void addArrayDim(int dim) { ArrayDims.push_back(dim); }
+    void arrayDimAdd() { ArrayDim++; }
+    void setLLVMValue(Value *v) { Val = v; }
 
     const std::string& getParamName() { return Name; }
     KType getParamType() { return Type; }
-    const std::vector<int>& getArrayDims() { return ArrayDim; }
+    Value *getLLVMValue() { return Val; }
+    const std::vector<int>& getArrayDims() { return ArrayDims; }
     int getArrayDim() { return ArrayDim; }
 };
 
@@ -132,10 +142,10 @@ private:
 public:
     FuncAST(const LineNo&, const std::string&, KType);
 
-   oid setLLVMFunction(Function *func) { LLVMFunc = func; }
-   oid setFuncName(const std::string& name) { FuncName = name; }
-   oid setRetType(KType type) { RetType = type; }
-   oid addFuncParam(ParamAST *param) { FuncParams.push_back(param); }
+    void setLLVMFunction(Function *func) { LLVMFunc = func; }
+    void setFuncName(const std::string& name) { FuncName = name; }
+    void setRetType(KType type) { RetType = type; }
+    void addFuncParam(ParamAST *param) { FuncParams.push_back(param); }
 
     Function *getLLVMFunction() { return LLVMFunc; }
     const std::string& getFuncName() { return FuncName; }
@@ -167,11 +177,11 @@ private:
     /// @brief 初始化表达式
     ASTBase *InitExpr;
 public:
-    InitializedAST(const LineNo&, ExprAST*);
+    InitializedAST(const LineNo&, ASTBase*);
 
-   oid setInitExpr(ExprAST *expr) { InitExpr = expr; }
+    void setInitExpr(ASTBase *expr) { InitExpr = expr; }
     ASTBase *getInitExpr() { return InitExpr; }
-}
+};
 
 
 /// ------------------------------------------------------------------------
@@ -196,10 +206,10 @@ private:
 public:
     VarDefAST(const LineNo&, const std::string&, KType);
 
-   oid setStructDefAST(StructDefAST *sdef) { StructDef = sdef; }
-   oid setVarName(const std::string& name) { VarName = name; }
-   oid setVarType(KType type)              { VarType = type; }
-   oid setLLVMValue(Value *v)              { Val =; }
+    void setStructDefAST(StructDefAST *sdef) { StructDef = sdef; }
+    void setVarName(const std::string& name) { VarName = name; }
+    void setVarType(KType type)              { VarType = type; }
+    void setLLVMValue(Value *v)              { Val = v; }
     
     StructDefAST *getStructDefAST() { return StructDef; }
     std::string getVarName()        { return VarName; }
@@ -220,15 +230,15 @@ public:
     ForStmtAST(const LineNo&, ASTBase*, ASTBase*, ASTBase*);
     ForStmtAST(const LineNo&);
 
-   oid setExpr1(ASTBase *expr) { Expr1 = expr; }
-   oid setExpr2(ASTBase *expr) { Expr2 = expr; }
-   oid setExpr3(ASTBase *expr) { Expr3 = expr; }
-   oid setStatement(ASTBase *stmt) { addChild(stmt); }
+    void setExpr1(ASTBase *expr) { Expr1 = expr; }
+    void setExpr2(ASTBase *expr) { Expr2 = expr; }
+    void setExpr3(ASTBase *expr) { Expr3 = expr; }
+    void setStatement(ASTBase *stmt) { addChild(stmt); }
 
     ASTBase *getExpr1() const { return Expr1; }
     ASTBase *getExpr2() const { return Expr2; }
     ASTBase *getExpr3() const { return Expr3; }
-    ASTBase *getStatement() const { 
+    ASTBase *getStatement()  { 
         if(childEmpty())
             return nullptr;
         return *begin();
@@ -245,11 +255,11 @@ private:
 public: 
     explicit WhileStmtAST(const LineNo&, ASTBase*);
 
-   oid setCond(ASTBase *cond) { Cond = cond; }
-   oid setStatement(ASTBase *stmt) { addChild(stmt); }
+    void setCond(ASTBase *cond) { Cond = cond; }
+    void setStatement(ASTBase *stmt) { addChild(stmt); }
 
     ASTBase* getCond() const { return Cond; }
-    ASTBase* getStatement() const {
+    ASTBase* getStatement() {
         if(childEmpty())
             return nullptr;
         return *begin();       
@@ -267,13 +277,13 @@ private:
 public:
     explicit IfStmtAST(const LineNo&, ASTBase*);
 
-   oid setCond(ASTBase *cond) { Cond = cond; }
-   oid setElse(ASTBase *elseStmt) { Else = elseStmt; }
-   oid setStatement(ASTBase *stmt) { addChild(stmt); }
+    void setCond(ASTBase *cond) { Cond = cond; }
+    void setElse(ASTBase *elseStmt) { Else = elseStmt; }
+    void setStatement(ASTBase *stmt) { addChild(stmt); }
 
     ASTBase *getCond() const { return Cond; }
     ASTBase *getElse() const { return Else; }
-    ASTBase *getStatement() const { 
+    ASTBase *getStatement() { 
         if(childEmpty())
             return nullptr;
         return *begin();     
@@ -291,15 +301,15 @@ private:
 public:
     BinaryExprAST(const LineNo&, Operator, ASTBase*, ASTBase*);
     
-    //oid setOperator(Operator op) { Op = op; }
-    //oid setLhs(ASTBase *lhs);
-    //oid setRhs(ASTBase *rhs);
+    // void setOperator(Operator op) { Op = op; }
+    // void setLhs(ASTBase *lhs);
+    // void setRhs(ASTBase *rhs);
 
     /// @brief get the operator enum type of the expr
     /// @return 
     Operator getExprOp() const { return Op; }
-    ASTBase *getLhs() const { return getChild(0); }
-    ASTBase *getRhs() const { return getChild(1); }
+    ASTBase *getLhs() { return getChild(0); }
+    ASTBase *getRhs() { return getChild(1); }
 public:
 };
 
@@ -316,7 +326,7 @@ public:
     UnaryExprAST(const LineNo&, Operator, ASTBase*);
 
     Operator getExprOp() const { return Op; }
-    ASTBase *getUnaryExpr() const { return getChild(0); }
+    ASTBase *getUnaryExpr() { return getChild(0); }
 };
 
 
@@ -331,7 +341,7 @@ public:
     LiteralExprAST(const LineNo&);
     LiteralExprAST(const LineNo&, const std::string&);
 
-   oid appendCharacter(char c) { Str.push_back(c); }
+    void appendCharacter(char c) { Str.push_back(c); }
 
     std::string getStr() const { return Str; }
 };
@@ -371,7 +381,7 @@ public:
     explicit NumberExprAST(const LineNo&, float);
     explicit NumberExprAST(const LineNo&, bool);
 
-    KType getType() { return KType; }
+    KType getType() { return Type; }
     char getCharValue() { return LitValue.C; }
     unsigned char getUCharValue() { return LitValue.Uc; }
     short getShortValue() { return LitValue.S; }
@@ -392,17 +402,17 @@ public:
 class IdRefAST : public ASTBase {
 private:
     const std::string     IdName;             //ar name
-    Param                *Param{nullptr}      // param define
+    ParamAST             *Param{nullptr};     // param define
     VarDefAST            *VarDef{nullptr};    //ar define
 public:
     explicit IdRefAST(const LineNo&, const std::string&);
 
-   oid setVarDef(VarDefAST*ar) { VarDef =ar; }
-   oid setParam(ParamAST *param) { Param = param; }
+    void setVarDef(VarDefAST*ar) { VarDef =ar; }
+    void setParam(ParamAST *param) { Param = param; }
 
     Value *getLLVMValue();
     ParamAST *getParam() const { return Param; }
-    VarDeclAST *getVarDef() const { return VarDef; }
+    VarDefAST *getVarDef() const { return VarDef; }
     std::string getIdName() const { return IdName; }
 };
 
@@ -412,22 +422,22 @@ public:
 /// ------------------------------------------------------------------------
 class IdIndexedRefAST : public ASTBase {
 private:
-    std::vector<ExprAST*> Indexes;            // indexes list
-    const std::string     IdName;             //ar name
-    Param                *Param{nullptr}      // param define
-    VarDefAST            *VarDef{nullptr};    //ar define
+    std::vector<ASTBase*> Indexes;             // indexes list
+    const std::string     IdName;              //ar name
+    ParamAST              *Param{nullptr};     // param define
+    VarDefAST             *VarDef{nullptr};    //ar define
 public:
     explicit IdIndexedRefAST(const LineNo&, const std::string&);
 
-   oid addIndex(ExprAST *expr) { Indexes.push_back(expr); }
-   oid setVarDef(VarDefAST *var) { VarDef =ar; }
-   oid setParam(ParamAST *param) { Param = param; }
+    void addIndex(ASTBase *expr) { Indexes.push_back(expr); }
+    void setVarDef(VarDefAST *var) { VarDef = var; }
+    void setParam(ParamAST *param) { Param = param; }
 
     Value *getLLVMValue();
     ParamAST *getParam() const { return Param; }
     std::string getIdName() const { return IdName; }
     VarDefAST  *getVarDef() const { return VarDef; }
-    const std::vector<ExprAST*>& getIndexes() const { return Indexes; }
+    const std::vector<ASTBase*>& getIndexes() const { return Indexes; }
 };
 
 
@@ -438,14 +448,14 @@ class CallExprAST : public ASTBase {
 private:
     FuncAST *TheCallFunction{nullptr};          // 对应的LLVM Function指针
     const std::string FuncName;                 // 函数名
-    std::vector<ExprAST*> ParamList;            // 参数列表
+    std::vector<ASTBase*> ParamList;            // 参数列表
 public:
     explicit CallExprAST(const LineNo&, const std::string&);
 
-   oid setLLVMFunction(FuncAST *func) { this->TheCallFunction = func; }
-   oid addParam(ExprAST *param) { this->ParamList.push_back(param); }
+    void setLLVMFunction(FuncAST *func) { this->TheCallFunction = func; }
+    void addParam(ASTBase *param) { this->ParamList.push_back(param); }
 
-    const std::vector<ExprAST*> getParamList() const { return this->ParamList; }
+    const std::vector<ASTBase*> getParamList() const { return this->ParamList; }
     llvm::Function *getLLVMFunction();
     const std::string& getName()               const { return this->FuncName; }
     bool isParamListEmpty()                    const { return this->ParamList.empty(); }
