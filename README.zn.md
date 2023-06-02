@@ -42,6 +42,18 @@ ID, DEF, EXTERN, VOID, BOOL, CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG,
 + - * / = == != . > >= < <= ! >> >>> << <<< || && | & ^
 ```
 
+**运算符优先级**
+
+| 优先级 | 运算符               |
+| ------ | -------------------- |
+| 1      | +a, -a, !a           |
+| 2      | *, /                 |
+| 3      | +, -                 |
+| 4      | <<, <<<, >>, >>>     |
+| 5      | <, <=, >, >=, ==, != |
+| 6      | &, \|, ^             |
+| 7      | &&, \|\|             |
+
 **文法**
 
 ```bash
@@ -90,6 +102,37 @@ switchStmt SWITCH '(' expr ')' '{' caseStmt* default? '}'
 caseStmt : CASE expr ':' stmt
 
 default : DEFAULT ':' stmt
+
+expr : logicExpr
+
+logicExpr : bitExpr ('&&' | '||') bitExpr
+
+bitExpr : cmpExpr ('&' | '|' | '^') cmpExpr
+
+cmpExpr : bitMoveExpr ('>' | '>=' | '<' | '<=' | '==' | '!=') bitMoveExpr
+
+bitMoveExpr : addExpr ('<<' | '<<<' | '>>' | '>>>') addExpr
+
+addExpr : mulExpr ('+' | '-') mulExpr
+
+mulExpr : unaryExpr ('*' | '/') unaryExpr
+
+unaryExpr : ('+' | '-' | '!') primaryExpr
+
+primaryExpr : '(' expr ')'
+			| idRef
+			| callExpr
+			| constExpr
+			
+idRef : ID ('[' expr ']')*
+
+callExpr : ID '(' (expr (',' expr)* )? ')'
+
+constExpr : LITERAL
+		  | FNUMBER
+		  | INUMBER
+		  | TRUE
+	      | FALSE
 ```
 
 ## 测试

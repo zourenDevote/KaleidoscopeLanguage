@@ -8,8 +8,10 @@ ASTBase::ASTBase(const LineNo& lineNo) : LineMsg(lineNo),
                                          Program(nullptr){}
                                         
 void ASTBase::accept(AstVisitor *v) {
-    v->visit(this);
+    // v->visit(this);
 }
+
+void ASTBase::setId(KAstId id) { Id = id; }
 
 void ASTBase::addChild(ASTBase *child) {
     this->Childs.push_back(child);
@@ -19,7 +21,7 @@ void ASTBase::setParent(ASTBase *parent) {
     this->Parent = parent;
 }
 
-void ASTBase::setLineNo(ASTBase *lineNo) {
+void ASTBase::setLineNo(const LineNo& lineNo) {
     this->LineMsg = lineNo;
 }
 
@@ -31,39 +33,40 @@ bool ASTBase::childEmpty() {
     return this->Childs.empty();
 }
 
-const ASTBase::NodeIter& ASTBase::cbegin() {
-    return this->Childs->cbegin();
-}
-
-const ASTBase::NodeIter& ASTBase::cend() {
-    return this->Childs->cend();
-}
-
-const ASTBase::NodeIter& ASTBase::crbegin() {
-    return this->Childs->crbegin();
-}
-
-const ASTBase::NodeIter& ASTBase::crend() {
-    return this->Childs->crend();
-}
-
 ASTBase::NodeIter ASTBase::begin() {
-    return this->Childs->begin();
+    return this->Childs.begin();
 }
 
 ASTBase::NodeIter ASTBase::end() {
-    return this->Childs->end();
+    return this->Childs.end();
 }
 
-ASTBase::NodeIter ASTBase::rbegin() {
-    return this->Childs->rbegin();
+ASTBase::RNodeIter ASTBase::rbegin() {
+    return this->Childs.rbegin();
 }
 
-ASTBase::NodeIter ASTBase::rend() {
-    return this->Childs->rend();
+ASTBase::RNodeIter ASTBase::rend() {
+    return this->Childs.rend();
 }
 
-ASTBase *ASTBase::getChild(size_t index) {
+ASTBase::CNodeIter ASTBase::cbegin() {
+    return this->Childs.cbegin();
+}
+
+ASTBase::CNodeIter ASTBase::cend() {
+    return this->Childs.cend();
+}
+
+ASTBase::CRNodeIter ASTBase::crbegin() {
+    return this->Childs.crbegin();
+}
+
+ASTBase::CRNodeIter ASTBase::crend() {
+    return this->Childs.crend();
+}
+
+
+ASTBase *ASTBase::getChild(unsigned int index) {
     if(Childs.size() <= index) {
         return nullptr;
     }
@@ -81,9 +84,8 @@ ProgramAST::ProgramAST(const LineNo& lineNo) : ASTBase(lineNo) {
 
 /// ----------------------------------------------------------
 /// ParamAST define code
-ParamAST::ParamAST(const LineNo& lineNo, const std::string& name, KType type) : ASTBase(lineNo) {
+ParamAST::ParamAST(const LineNo& lineNo, const std::string& name, KType type) : ASTBase(lineNo), Name(name) {
     setId(FuncParamId);
-    this->Name = name;
     this->Type = type;
     this->ArrayDim  = 0;
 }
@@ -100,7 +102,7 @@ FuncAST::FuncAST(const LineNo& lineNo, const std::string& funcName, KType retTyp
 
 /// ----------------------------------------------------------
 /// InitializedAST define code
-InitializedAST::InitializedAST(const LineNo& lineNo, ExprAST *expr) : ASTBase(lineNo) {
+InitializedAST::InitializedAST(const LineNo& lineNo, ASTBase *expr) : ASTBase(lineNo) {
     setId(InitializeId);
     this->InitExpr = expr;
 }
@@ -225,7 +227,7 @@ NumberExprAST::NumberExprAST(const LineNo& lineNo, int v) : ASTBase(lineNo) {
 NumberExprAST::NumberExprAST(const LineNo& lineNo, unsigned int v) : ASTBase(lineNo) {
     setId(NumberId);
     this->LitValue.Ui = v;
-    this->Type = UInt;
+    this->Type = Uint;
 }
 
 NumberExprAST::NumberExprAST(const LineNo& lineNo, long v) : ASTBase(lineNo) {
@@ -261,17 +263,16 @@ NumberExprAST::NumberExprAST(const LineNo& lineNo, bool v) : ASTBase(lineNo) {
 
 /// ----------------------------------------------------------
 /// IdRefAST define code
-IdRefAST::IdRefAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo) {
+IdRefAST::IdRefAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo), IdName(name) {
     setId(IdRefId);
-    this->IdName = name;
 }
 
 Value *IdRefAST::getLLVMValue() {
     if(Param) {
-        return Param->getValue();
+        return Param->getLLVMValue();
     }
     else if(VarDef) {
-        return VarDef->getValue();
+        return VarDef->getLLVMValue();
     }
     return nullptr;
 }
@@ -279,17 +280,16 @@ Value *IdRefAST::getLLVMValue() {
 
 /// ----------------------------------------------------------
 /// IdIndexedRefAST define code
-IdIndexedRefAST::IdIndexedRefAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo) {
+IdIndexedRefAST::IdIndexedRefAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo),IdName(name) {
     setId(IdRefId);
-    this->IdName = name;
 }
 
 Value *IdIndexedRefAST::getLLVMValue() {
     if(Param) {
-        return Param->getValue();
+        return Param->getLLVMValue();
     }
     else if(VarDef) {
-        return VarDef->getValue();
+        return VarDef->getLLVMValue();
     }
     return nullptr;
 }
@@ -297,9 +297,8 @@ Value *IdIndexedRefAST::getLLVMValue() {
 
 /// ----------------------------------------------------------
 /// CallExprAST define code
-CallExprAST::CallExprAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo) {
+CallExprAST::CallExprAST(const LineNo& lineNo, const std::string& name) : ASTBase(lineNo), FuncName(name){
     setId(CallId);
-    this->FuncName = name;
 }
 
 llvm::Function *CallExprAST::getLLVMFunction() {
