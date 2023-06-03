@@ -9,6 +9,8 @@
 #include "global_variable.h"
 
 
+/// ----------------------------------------------------------------
+/// static variable defined to help pre analysis
 static int CurrentIndex = 0;
 static FILE *Fp = nullptr;
 static ProgramAST *CurProg = nullptr;
@@ -16,7 +18,12 @@ static std::map<std::string, ProgramAST *> ProgMap;
 static std::vector<std::string> FileNameList;
 static regex_t Regex;
 static char Pattern[] = "[ ]*import[ ]*\"([a-zA-Z0-9_]+.k)\"[ ]*;";
+static std::vector<ProgramAST*> DagCheckStack; 
+/// ----------------------------------------------------------------
 
+
+/// ----------------------------------------------------------------
+/// @brief init regex expr
 static inline bool init() {
     int ret = regcomp(&Regex, Pattern, REG_EXTENDED);
     if(ret) {
@@ -25,7 +32,10 @@ static inline bool init() {
     }
     return true; 
 }
+/// ----------------------------------------------------------------
 
+/// ----------------------------------------------------------------
+/// @brief free resources that open
 static inline void close() {
     if(Fp)
         fclose(Fp);
@@ -34,7 +44,10 @@ static inline void close() {
     FileNameList.clear();
     ProgMap.clear();
 }
+/// ----------------------------------------------------------------
 
+
+/// ----------------------------------------------------------------
 static inline ProgramAST* getOrCreateProgAST(const std::string& file) {
     if(ProgMap.find(file) == ProgMap.end()) {
         ProgramAST *prog = new ProgramAST({CurrentIndex, 0, 0});
@@ -45,8 +58,11 @@ static inline ProgramAST* getOrCreateProgAST(const std::string& file) {
     }
     return ProgMap[file];
 }
+/// ----------------------------------------------------------------
 
-static void getIncludeFileName(char *s) {
+
+/// ----------------------------------------------------------------
+static void getImportFileName(char *s) {
     regmatch_t matches[2];
     int offset = 0, start, end, length;
     char *file = nullptr;
@@ -67,19 +83,25 @@ static void getIncludeFileName(char *s) {
         offset += matches[0].rm_eo;
     }
 }
+/// ----------------------------------------------------------------
 
 
+/// ----------------------------------------------------------------
 static inline void anaFileDepAndCreateProgramAST() {
     static char File[512];
     while((fgets(File, sizeof(File), Fp)) != NULL) {
-        getIncludeFileName(File);
+        getImportFileName(File);
         memset(File, 0, sizeof(File));
     }
 }
+/// ----------------------------------------------------------------
 
 
-static std::vector<ProgramAST*> DagCheckStack; 
-
+/// ----------------------------------------------------------------
+/// @brief This two function checks if there is a circular reference
+/// because circular reference can't confirm the compile order.
+/// @example t1 import t2, t2 import t3, t3 import t1, there are error
+/// import way.
 static inline bool depCheck(ProgramAST *prog) {
     for(auto *p : DagCheckStack) {
         if(p == prog) {
@@ -100,7 +122,7 @@ static inline bool depCheck(ProgramAST *prog) {
     return true;
 }
 
-/// @brief Check the reference for rings
+
 static inline bool depCheck() {
     for(const auto& prog : ProgramList) {
         DagCheckStack.clear();
@@ -108,7 +130,10 @@ static inline bool depCheck() {
     }
     return true;
 }
+/// ----------------------------------------------------------------
 
+
+/// ----------------------------------------------------------------
 static inline void logRefError() {
     auto it1 = DagCheckStack.begin();
     auto it2 =  DagCheckStack.begin()+1;
@@ -120,7 +145,10 @@ static inline void logRefError() {
         it2 ++;
     }
 }
+/// ----------------------------------------------------------------
 
+
+/// ----------------------------------------------------------------
 bool preFileDepAnalysis() {
     
     if(!init()) {
@@ -159,6 +187,7 @@ bool preFileDepAnalysis() {
 
     return true;
 }
+/// ----------------------------------------------------------------
 
 
 
