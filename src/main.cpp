@@ -1,8 +1,10 @@
 
 
+#include "global_variable.h"
+#include "pre_analysis.h"
 #include "cxxopts.hpp"
 #include "parser.h"
-#include "global_variable.h"
+
 
 #include <memory>
 #include <iostream>
@@ -32,7 +34,8 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("print-ir", "Print ir generation message", cxxopts::value<bool>()->default_value("false"))
             ("print-ast", "Print ast of source file", cxxopts::value<bool>()->default_value("false"))
             ("o, output", "Output file name", cxxopts::value<std::string>()->default_value("a.out"))
-            ("h, help", "Print help");
+            ("h, help", "Print help")
+            ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"));
     
         auto result = options.parse(argc, argv);
 
@@ -58,6 +61,12 @@ int parseCmdArgs(int argc, char *argv[]) {
             PrintIR = true;
         }
 
+        ThreadCount = result["j"].as<int>();
+        if(ThreadCount > 1) {
+            UseMultThreadCompile = true;
+            std::cout << "Use mult thread compile. core thread : " << ThreadCount << std::endl;
+        }
+
         OutputFileName = result["output"].as<std::string>();
 
         return 0;
@@ -73,12 +82,16 @@ int parseCmdArgs(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     /// parse command line option
     if(parseCmdArgs(argc, argv)) {
+        std::cerr << "Exit with error!" << std::endl;
         return 1;
     }
     
     /// Pre Analysis
+    if(!preFileDepAnalysis()) {
+        std::cerr << "Exit with error!" << std::endl;
+        return 1;
+    }
     
 
-
-    ///  
+    /// 
 }
