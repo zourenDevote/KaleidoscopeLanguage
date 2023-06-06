@@ -3,6 +3,7 @@ project(kalecc)
 cmake_minimum_required(VERSION 3.10)
 
 add_subdirectory(src)
+add_subdirectory(test)
 
 
 # 设置可执行文件的输出目录为 bin

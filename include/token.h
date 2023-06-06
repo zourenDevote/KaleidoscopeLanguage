@@ -21,6 +21,7 @@ enum Token {
   tok_switch,              // --> keyword switch
   tok_case,                // --> keyword case
   tok_default,             // --> keyword default
+  tok_import,              // --> keyword import
 
   
   tok_id,                  // --> identifier
