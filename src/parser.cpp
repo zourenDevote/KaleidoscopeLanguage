@@ -1,5 +1,9 @@
 
 #include "parser.h"
+#include "error.h"
+#include "global_variable.h"
+
+
 #include <string>
 #include <stdio.h>
 #include <algorithm>
@@ -11,211 +15,271 @@
 #include <map>
 #include <set>
 
+/// -----------------------------------------------------
+/// @brief Code implication of class TokenParser
+/// -----------------------------------------------------
+TokenParser::TokenParser(unsigned fileIndex) {
+    this->LineInfo = {fileIndex, 0, 0};
+    this->DoubleNumVal = 0.0;
+    this->IntNumVal = 0;
+    this->LiteralVal = "";
+    this->IdStr = "";
+    this->LastChar = ' ';
 
-/// @brief 当前的ID
-// static std::string IdStr;
-/// @brief 当前的行列号
-// static unsigned Row = 1, Col = 0;
-/// @brief 存储的浮点字面常量
-// static double DoubleNumVal;
-/// @brief 存储的整数字面常量
-// static int IntNumVal;
-/// @brief 文件句柄
-// static FILE *fp;
-/// @brief 当前的文件
-// static std::string FileName; 
+    if(fileIndex < InputFileList.size()) {
+        Handle = fopen(InputFileList[fileIndex].c_str(), "rt+");
+    }
+    else {
+        Handle = nullptr;
+    }
+}
 
-// static void openFile(const char* filepath) {
-//     FileName = filepath;
-//     fp = fopen(filepath, "rt+");
-//     if(!fp) {
-//         fprintf(stderr, "Failed to open file %s\n", filepath);
-//         exit(-1);
-//     }
-//     return;
-// }
+bool TokenParser::openSuccess() {
+    return Handle != nullptr;
+}
 
-// #define LOG_ERROR(X) fprintf(stderr, "%s:%d:%d error: %s\n", FileName.c_str(), Row, Col, X); assert(false);
 
-// /////////////////////////////////////////////////////////
-// /// Lexer
-// /////////////////////////////////////////////////////////
+void TokenParser::getChar() {
+    LastChar = fgetc(Handle);
+    if(LastChar == '\n') {
+        LineInfo.Row++; LineInfo.Col = 0;
+    }
+    else {
+        LineInfo.Col++;
+    }
+}
 
-// /// 获取token
-// static int LastChar = ' ';
+static const std::map<std::string, Token> KeyWordTkMap = {
+    {"def", tok_def}, {"extern", tok_extern}, {"if", tok_if}, {"for", tok_for}, {"while", tok_while},
+    {"else", tok_else}, {"then", tok_then}, {"in", tok_in}, {"return", tok_return}, {"continue", tok_continue},
+    {"break", tok_break}, {"struct", tok_struct}, {"switch", tok_switch}, {"case", tok_case}, {"default", tok_default},
+    {"true", tok_true}, {"false", tok_false}, {"bool", tok_bool}, {"char", tok_char}, {"uchar", tok_uchar},
+    {"short", tok_short}, {"ushort", tok_ushort}, {"int", tok_int}, {"uint", tok_uint}, {"long", tok_long},
+    {"ulong", tok_ulong}, {"float", tok_float}, {"double", tok_double}, {"import", tok_import}
+};
 
-// static int getToken() {
 
-//     while(isspace(LastChar)) {
-//         if(LastChar == '\n') {
-//             Row++; Col = 0;
-//         }
-//         LastChar = fgetc(fp);
-//         Col++;
-//     }
-        
+Token TokenParser::getToken() {
+    
 
-//     if(isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9]*
-//         IdStr = LastChar;
-//         while(isalnum((LastChar = fgetc(fp)))) {
-//             IdStr += LastChar;
-//             Col++;
-//         }
-            
+    /// jump '\n', ' ', '\r'
+    while(isspace(LastChar)) {
+        getChar();
+    }
 
-//         if (IdStr == "def")
-//             return tok_def;
-//         if (IdStr == "extern")
-//             return tok_extern;
-//         if (IdStr == "if")
-//             return tok_if;
-//         if (IdStr == "then")
-//             return tok_then;
-//         if (IdStr == "else")
-//             return tok_else; 
-//         if (IdStr == "for")
-//             return tok_for;
-//         if (IdStr == "in")
-//             return tok_in;
-//         if (IdStr == "while")
-//             return tok_while;
-//         if (IdStr == "return")    
-//             return tok_return;
-//         if (IdStr == "double")
-//             return tok_double;
-//         if (IdStr == "int")
-//             return tok_int;
-//         if (IdStr == "true")
-//             return tok_true;
-//         if (IdStr == "bool")
-//             return tok_bool;
-//         if (IdStr == "false")
-//             return tok_false;
-//         if (IdStr == "void")
-//             return tok_void;
-//         return tok_id;
-//     }
 
-//     if (isdigit(LastChar)) {
-//         std::string NumStr;
-//         bool isFloat = false;
-//         do {
-//             NumStr += LastChar;
-//             LastChar = fgetc(fp);
-//             Col++;
-//             if(LastChar == '.')
-//                 isFloat = true;
-//         } while(isdigit(LastChar) || LastChar == '.');
+    /// parse import "xxx.k"
+    if(LastChar == '\"') {
+        LiteralVal = "";
+        getChar();
+        // @TODO need to import check
+        while(LastChar != "\"") {
+            LiteralVal.push_back((char)LastChar);
+            getChar();
+            if(LastChar == '\n' || LastChar == ' ' || LastChar == '\r') {
+                LOG_ERROR("Illigal character in import literal \'%c\'", LineInfo, LastChar);
+            }
+        }
+        return tok_literal;
+    }
 
-//         if(isFloat) {
-//             DoubleNumVal = strtod(NumStr.c_str(), nullptr);
-//             return tok_double_number;
-//         }
 
-//         IntNumVal = atoi(NumStr.c_str());
-//         return tok_int_number;
-//     }
+    // identifier: [a-zA-Z][a-zA-Z0-9]*
+    if(isalpha(LastChar)) { 
+        IdStr = LastChar;
+        getChar();
+        while(isalnum((LastChar))) {
+            IdStr += LastChar;
+            getChar();
+        }
 
-//     switch (LastChar)
-//     {
-//         case '+' : LastChar = fgetc(fp); Col++; return tok_plus;
-//         case '-' : LastChar = fgetc(fp); Col++; return tok_sub;
-//         case '*' : LastChar = fgetc(fp); Col++; return tok_mul;
-//         case '/' : LastChar = fgetc(fp); Col++; return tok_div;
-//         case '>' : {
-//             LastChar = fgetc(fp);
-//             Col++;
-//             if(LastChar == '=') {
-//                 LastChar = fgetc(fp);
-//                 Col++;
-//                 return tok_gteq;
-//             }
-//             return tok_gt;
-//         }
-//         case '<' : {
-//             LastChar = fgetc(fp);
-//             Col++;
-//             if(LastChar == '=') {
-//                 LastChar = fgetc(fp);
-//                 Col++;
-//                 return tok_lteq;
-//             }             
-//             return tok_lt;
-//         }
-//         case '=' : {
-//             LastChar = fgetc(fp);
-//             Col++;
-//             if(LastChar == '=') {
-//                 LastChar = fgetc(fp);
-//                 Col++;
-//                 return tok_eq;
-//             }
-//             return tok_assign;
-//         }
-//         case '!' : {
-//             LastChar = fgetc(fp);
-//             Col++;
-//             if(LastChar == '=') {
-//                 LastChar = fgetc(fp);
-//                 Col++;
-//                 return tok_neq;
-//             }
-//             return tok_not;
-//         }
-//     }
+        auto it = KeyWordTkMap.find(IdStr);
 
-//     if(LastChar == '#') {
-//         do {
-//             LastChar = fgetc(fp);
-//             Col++;
-//         }
-//         while(LastChar != EOF && LastChar != '\n');
+        if(it == KeyWordTkMap.end())
+            return tok_id;
+        return *it;
+    } 
 
-//         if(LastChar != EOF)
-//             return getToken();
-//     }
+    if (isdigit(LastChar)) {
+        std::string NumStr = "";
+        bool isFloat = false;
+        NumStr += LastChar;
+        do {
+            NumStr += LastChar;
+            getChar();
+            if(LastChar == '.')
+                isFloat = true;
+        } while(isdigit(LastChar) || LastChar == '.');
 
-//     if(LastChar == EOF)
-//         return tok_eof; 
+        if(isFloat) {
+            DoubleNumVal = strtod(NumStr.c_str(), nullptr);
+            return tok_fnumber;
+        }
 
-//     int ThisChar = LastChar;
-//     LastChar = fgetc(fp);
-//     Col++;
-//     return ThisChar;
-// }
+        IntNumVal = atol(NumStr.c_str());
+        return tok_inumber;
+    }
 
-// void unitTest(const char* filepath) {
-//     openFile(filepath);
-//     int tok;
-//     tok = getToken();
-//     while(tok != tok_eof) {
-//         printf("Token value = %d, Row %d, Col %d\n", tok, Row, Col);
-//         tok = getToken();
-//     }
-// }
+    switch(LastChar) {
+        case '+': { return tok_add; }
+        case '-': { return tok_sub; }
+        case '*': { return tok_mul; }
+        case '/': { return tok_div; }
+        case '=': {
+            getChar();
+            if(LastChar == '=')
+                return tok_eq;
+            return tok_assign;
+        }
+        case '!':{
+            getChar();
+            if(LastChar == '=')
+                return tok_neq;
+            return tok_not;
+        }
+        case '.': { return tok_dot; }
+        case '>': { 
+            getChar();
+            if(LastChar == '=')
+                return tok_ge;
+            else if(LastChar == '>') {
+                getChar();
+                if(LastChar == '>')
+                    return tok_urh;
+                return tok_rh;
+            }
+            return tok_gt;
+        }
+        case '<': {
+            getChar();
+            if(LastChar == '=')
+                return tok_le;
+            else if(LastChar == '<') {
+                getChar();
+                if(LastChar == '<') 
+                    return tok_ulh;
+                return tok_lh;
+            }
+            return tok_lt;
+        }
+        case '|': {
+            getChar();
+            if(LastChar == '|')
+                return tok_or;
+            return tok_bitor;
+        }
+        case '&':{
+            getChar();
+            if(LastChar == '&')
+                return tok_and;
+            return tok_bitand;
+        }
+        case '^': { return tok_bitxor; }
+    }
 
-// static int CurTok;
-// static int CurrSeek;
-// static int getNextToken() { return CurTok = getToken(); }
+    if(LastChar == '#') {
+        do {
+            getChar();
+        }
+        while(LastChar != EOF && LastChar != '\n');
+    }
 
-/// 前看N个token
-// std::vector<int> lookUp(int n) {
-//     std::vector<int> LookUpToks;
-//     int CurrentLoc = ftell(fp);
-//     int SavedChar = LastChar;
-//     unsigned SavedRow = Row, SavedCol = Col;
-//     int i = 0, tok;
-//     while (i < n && CurTok != tok_eof) {
-//         tok = getToken();
-//         LookUpToks.push_back(tok);
-//         i++;
-//     }
-//     fseek(fp, CurrentLoc, SEEK_SET);  
-//     LastChar = SavedChar;
-//     Row = SavedRow; Col = SavedCol;
+    if(LastChar == EOF)
+        return tok_eof; 
 
-//     return LookUpToks;
-// }
+    int ThisChar = LastChar;
+    getChar();
+
+    return ThisChar;
+
+}
+
+
+std::vector<Token> TokenParser::lookUp(unsigned i) {
+    std::vector<int> LookUpToks;
+    int CurrentLoc = ftell(Handle);
+    int SavedChar = LastChar;
+    LineNo preNo = LineInfo;
+    
+    int i = 0, tok;
+    while (i < n && CurTok != tok_eof) {
+        tok = getToken();
+        LookUpToks.push_back(tok);
+        i++;
+    }
+    
+    fseek(fp, CurrentLoc, SEEK_SET);  
+    
+    LastChar = SavedChar;
+    LineInfo = preNo;
+
+    return LookUpToks;   
+}
+
+/// -----------------------------------------------------
+
+
+/// -----------------------------------------------------
+/// @brief Code implication of class GrammerParser
+/// -----------------------------------------------------
+GrammerParser::GrammerParser(ProgramAST *prog) {
+    ProgAst = prog;
+    TkParser = new TokenParser(prog->getLineNo()->FileIndex);
+}
+
+void GrammerParser::generateSrcToAst() {
+
+}
+
+Token GrammerParser::getNextToken() {
+    CurTok = getNextToken();
+}
+
+void GrammerParser::parseProgram() {
+
+}
+
+KType GrammerParser::parseTypeDecl() {
+    return 0;
+}
+
+ASTBase *GrammerParser::parseExternDef()   { return nullptr; }
+ASTBase *GrammerParser::parseVarExtern()   { return nullptr; }
+ASTBase *GrammerParser::parseFuncExtern()  { return nullptr; }
+ASTBase *GrammerParser::parseVarDef()      { return nullptr; }
+ASTBase *GrammerParser::parseInitExpr()    { return nullptr; }
+ASTBase *GrammerParser::parseFuncDef()     { return nullptr; }
+ASTBase *GrammerParser::parseImportDecl()  { return nullptr; }
+ASTBase *GrammerParser::parseParamList()   { return nullptr; }
+ASTBase *GrammerParser::parseParamDecl()   { return nullptr; }
+ASTBase *GrammerParser::parseStmt()        { return nullptr; }
+ASTBase *GrammerParser::parseBlockStmt()   { return nullptr; }
+ASTBase *GrammerParser::parseIfStmt()      { return nullptr; }
+ASTBase *GrammerParser::parseExprStmt()    { return nullptr; }
+ASTBase *GrammerParser::parseForStmt()     { return nullptr; }
+ASTBase *GrammerParser::parseWhileStmt()   { return nullptr; }
+ASTBase *GrammerParser::parseReturnStmt()  { return nullptr; }
+ASTBase *GrammerParser::parseBreakStmt()   { return nullptr; }
+ASTBase *GrammerParser::parseContinueStmt(){ return nullptr; }
+ASTBase *GrammerParser::parseSwitchStmt()  { return nullptr; }
+ASTBase *GrammerParser::parseCaseStmt()    { return nullptr; }
+ASTBase *GrammerParser::parseDefault()     { return nullptr; }
+ASTBase *GrammerParser::parseExpr()        { return nullptr; }
+ASTBase *GrammerParser::parseLogicExpr()   { return nullptr; }
+ASTBase *GrammerParser::parseBitExpr()     { return nullptr; }
+ASTBase *GrammerParser::parseCmpExpr()     { return nullptr; }
+ASTBase *GrammerParser::parseBitMoveExpr() { return nullptr; }
+ASTBase *GrammerParser::parseAddExpr()     { return nullptr; }
+ASTBase *GrammerParser::parseMulExpr()     { return nullptr; }
+ASTBase *GrammerParser::parseUnaryExpr()   { return nullptr; }
+ASTBase *GrammerParser::parsePrimaryExpr() { return nullptr; }
+ASTBase *GrammerParser::parseIdRef()       { return nullptr; }
+ASTBase *GrammerParser::parseCallExpr()    { return nullptr; }
+ASTBase *GrammerParser::parseConstExpr()   { return nullptr; }
+
+
+/// -----------------------------------------------------
+
 
 
 
