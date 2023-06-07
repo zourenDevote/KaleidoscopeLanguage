@@ -12,11 +12,12 @@ set(LLVM_LINK_COMPONENTS
 link_directories(${LLVM_LIBRARY_DIRS})
 
 set(SRC_FILE 
-             pre_analysis.cpp
-             global_variable.cpp
-             ast.cpp
-             parser.cpp 
-             main.cpp)
+    pre_analysis.cpp
+    global_variable.cpp
+    ast.cpp
+    parser.cpp
+    test/token_parser_test.cpp 
+    main.cpp)
 
 add_executable(${PROJECT_NAME} ${SRC_FILE})
 

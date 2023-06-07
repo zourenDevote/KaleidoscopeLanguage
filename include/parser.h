@@ -23,7 +23,7 @@ private:
     int LastChar;
 private:
     FILE *Handle;
-private:
+public:
     Token getToken();
     void getChar();
 public:

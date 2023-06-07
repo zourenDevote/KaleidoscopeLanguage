@@ -1,6 +1,6 @@
 
-#ifndef KALE_ERROR
-#define KALE_ERROR
+#ifndef __KALE_ERROR__
+#define __KALE_ERROR__
 
 #define LOG_ERROR(str, lineInfo, ...) printf("error: %d:%d-%d %s", InputFileList[lineInfo.FileIndex].c_str(), lineInfo.Row, lineInfo.Col, str, __VA_ARGS__);
 

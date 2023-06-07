@@ -2,21 +2,14 @@ project(kalecc)
 
 cmake_minimum_required(VERSION 3.10)
 
+option(ENABLE_CTEST "Ctest option" OFF)
+
+if(ENABLE_CTEST)
+    message(STATUS "Enable ctest")
+    add_compile_definitions(__CTEST_ENABLE__)
+    enable_testing()
+endif()
+
+
 add_subdirectory(src)
 add_subdirectory(test)
-
-
-# 设置可执行文件的输出目录为 bin
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# 设置动态链接库的输出目录为 bin
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# 设置静态库的输出目录为 lib
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
-
-install(TARGETS kalecc
-    ARCHIVE DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-    LIBRARY DESTINATION ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}
-    RUNTIME DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})

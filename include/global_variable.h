@@ -22,3 +22,10 @@ extern bool PrintAST;
 /// T ==> Use multi thread compile
 extern bool UseMultThreadCompile;
 extern int ThreadCount;
+
+
+/// T ==> This global variable define for test
+#ifdef __CTEST_ENABLE__
+extern bool TokenParserTestFlag;
+
+#endif
