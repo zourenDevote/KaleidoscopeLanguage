@@ -49,7 +49,7 @@ void TokenParser::getChar() {
     }
 }
 
-static const std::map<std::string, Token> KeyWordTkMap = {
+static std::map<std::string, Token> KeyWordTkMap = {
     {"def", tok_def}, {"extern", tok_extern}, {"if", tok_if}, {"for", tok_for}, {"while", tok_while},
     {"else", tok_else}, {"then", tok_then}, {"in", tok_in}, {"return", tok_return}, {"continue", tok_continue},
     {"break", tok_break}, {"struct", tok_struct}, {"switch", tok_switch}, {"case", tok_case}, {"default", tok_default},
@@ -69,17 +69,18 @@ Token TokenParser::getToken() {
 
 
     /// parse import "xxx.k"
-    if(LastChar == '\"') {
+    if(LastChar == '"') {
         LiteralVal = "";
         getChar();
         // @TODO need to import check
-        while(LastChar != "\"") {
-            LiteralVal.push_back((char)LastChar);
+        while(LastChar != '"') {
+            LiteralVal += LastChar;
             getChar();
-            if(LastChar == '\n' || LastChar == ' ' || LastChar == '\r') {
-                LOG_ERROR("Illigal character in import literal \'%c\'", LineInfo, LastChar);
-            }
+            // if(LastChar == '\n' || LastChar == ' ' || LastChar == '\r') {
+            //     LOG_ERROR("Illigal character in import literal \'%c\'", LineInfo, LastChar);
+            // }
         }
+        getChar();
         return tok_literal;
     }
 
@@ -97,7 +98,7 @@ Token TokenParser::getToken() {
 
         if(it == KeyWordTkMap.end())
             return tok_id;
-        return *it;
+        return KeyWordTkMap[IdStr];
     } 
 
     if (isdigit(LastChar)) {
@@ -121,60 +122,76 @@ Token TokenParser::getToken() {
     }
 
     switch(LastChar) {
-        case '+': { return tok_add; }
-        case '-': { return tok_sub; }
-        case '*': { return tok_mul; }
-        case '/': { return tok_div; }
+        case '+': { getChar(); return tok_add; }
+        case '-': { getChar(); return tok_sub; }
+        case '*': { getChar(); return tok_mul; }
+        case '/': { getChar(); return tok_div; }
         case '=': {
             getChar();
-            if(LastChar == '=')
+            if(LastChar == '=') {
+                getChar(); 
                 return tok_eq;
+            }
             return tok_assign;
         }
         case '!':{
             getChar();
-            if(LastChar == '=')
+            if(LastChar == '=') {
+                getChar();
                 return tok_neq;
+            }
             return tok_not;
         }
-        case '.': { return tok_dot; }
+        case '.': { getChar(); return tok_dot; }
         case '>': { 
             getChar();
-            if(LastChar == '=')
+            if(LastChar == '=') {
+                getChar();
                 return tok_ge;
+            }
             else if(LastChar == '>') {
                 getChar();
-                if(LastChar == '>')
+                if(LastChar == '>') {
+                    getChar();
                     return tok_urh;
+                }
                 return tok_rh;
             }
             return tok_gt;
         }
         case '<': {
             getChar();
-            if(LastChar == '=')
+            if(LastChar == '=') {
+                getChar();
                 return tok_le;
+            }
             else if(LastChar == '<') {
                 getChar();
-                if(LastChar == '<') 
+                if(LastChar == '<') {
+                    getChar();
                     return tok_ulh;
+                }
                 return tok_lh;
             }
             return tok_lt;
         }
         case '|': {
             getChar();
-            if(LastChar == '|')
+            if(LastChar == '|') {
+                getChar();
                 return tok_or;
+            }
             return tok_bitor;
         }
         case '&':{
             getChar();
-            if(LastChar == '&')
+            if(LastChar == '&') {
+                getChar();
                 return tok_and;
+            }
             return tok_bitand;
         }
-        case '^': { return tok_bitxor; }
+        case '^': { getChar(); return tok_bitxor; }
     }
 
     if(LastChar == '#') {
@@ -190,25 +207,25 @@ Token TokenParser::getToken() {
     int ThisChar = LastChar;
     getChar();
 
-    return ThisChar;
+    return (Token)ThisChar;
 
 }
 
 
-std::vector<Token> TokenParser::lookUp(unsigned i) {
-    std::vector<int> LookUpToks;
+std::vector<Token> TokenParser::lookUp(unsigned n) {
+    std::vector<Token> LookUpToks;
     int CurrentLoc = ftell(Handle);
     int SavedChar = LastChar;
     LineNo preNo = LineInfo;
     
-    int i = 0, tok;
-    while (i < n && CurTok != tok_eof) {
+    int i = 0, tok = getToken();
+    while (i < n && tok != tok_eof) {
+        LookUpToks.push_back((Token)tok);
         tok = getToken();
-        LookUpToks.push_back(tok);
         i++;
     }
     
-    fseek(fp, CurrentLoc, SEEK_SET);  
+    fseek(Handle, CurrentLoc, SEEK_SET);  
     
     LastChar = SavedChar;
     LineInfo = preNo;
@@ -240,7 +257,7 @@ void GrammerParser::parseProgram() {
 }
 
 KType GrammerParser::parseTypeDecl() {
-    return 0;
+    return (KType)0;
 }
 
 ASTBase *GrammerParser::parseExternDef()   { return nullptr; }

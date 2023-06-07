@@ -5,6 +5,10 @@
 #include "cxxopts.hpp"
 #include "parser.h"
 
+#ifdef __CTEST_ENABLE__
+#include "test/test.h"
+#endif  
+
 
 #include <memory>
 #include <iostream>
@@ -36,6 +40,10 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("o, output", "Output file name", cxxopts::value<std::string>()->default_value("a.out"))
             ("h, help", "Print help")
             ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"));
+
+#ifdef __CTEST_ENABLE__
+        options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"));
+#endif
     
         auto result = options.parse(argc, argv);
 
@@ -69,6 +77,10 @@ int parseCmdArgs(int argc, char *argv[]) {
 
         OutputFileName = result["output"].as<std::string>();
 
+#ifdef __CTEST_ENABLE__
+        TokenParserTestFlag = result["token_test"].as<bool>();
+#endif
+
         return 0;
     }
     catch (const cxxopts::exceptions::exception& e) {
@@ -85,6 +97,10 @@ int main(int argc, char *argv[]) {
         std::cerr << "Exit with error!" << std::endl;
         return 1;
     }
+
+#ifdef __CTEST_ENABLE__
+    if(TokenParserTestFlag) {return tokenParserTest();}
+#endif    
     
     /// Pre Analysis
     if(!preFileDepAnalysis()) {

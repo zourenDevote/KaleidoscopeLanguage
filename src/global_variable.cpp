@@ -20,3 +20,10 @@ bool PrintAST = false;
 /// T ==> Use multi thread compile
 bool UseMultThreadCompile = false;
 int ThreadCount = 1;
+
+
+/// T ==> This global variable define for test
+#ifdef __CTEST_ENABLE__
+bool TokenParserTestFlag = false;
+
+#endif
