@@ -164,11 +164,12 @@ $> make -j 'nproc'
 $> ctest -j 'nproc'
 ```
 
-## Cmake Option
+## CMAKE Option
 
 |      Option      |      Value       | Default Value |           Description            |
 | :--------------: | :--------------: | :-----------: | :------------------------------: |
 | CMAKE_BUILD_TYPE | Release \| Debug |    Release    | Release version or Debug version |
+|   ENABLE_CTEST   |    On \| Off     |      Off      |           Enable test            |
 
 ## Usage
 

@@ -164,11 +164,12 @@ $> make -j 'nproc'
 $> ctest -j 'nproc'
 ```
 
-## Cmake选项
+## CMAKE选项
 
-|       选项       |       取值       | 默认值  |               描述               |
-| :--------------: | :--------------: | :-----: | :------------------------------: |
-| CMAKE_BUILD_TYPE | Release \| Debug | Release | Release version or Debug version |
+|       选项       |       取值       | 默认值  |            描述            |
+| :--------------: | :--------------: | :-----: | :------------------------: |
+| CMAKE_BUILD_TYPE | Release \| Debug | Release | Release 版本 或 Debug 版本 |
+|   ENABLE_CTEST   |    On \| Off     |   Off   |          使能测试          |
 
 ## 使用
 
