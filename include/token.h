@@ -22,6 +22,7 @@ enum Token {
   tok_case,                // --> keyword case
   tok_default,             // --> keyword default
   tok_import,              // --> keyword import
+  tok_const,               // --> keyword const
 
   
   tok_id,                  // --> identifier
@@ -32,6 +33,7 @@ enum Token {
   tok_literal,             // --> string literal
 
   // type
+  tok_void,                // --> type void
   tok_bool,                // --> type bool
   tok_char,                // --> type char
   tok_uchar,               // --> type uchar

@@ -17,6 +17,12 @@ void ASTBase::addChild(ASTBase *child) {
     this->Childs.push_back(child);
 }
 
+void ASTBase::addChilds(const std::vector<ASTBase*>& childs) {
+    for(auto child : childs) {
+        addChild(child);
+    }
+}
+
 void ASTBase::setParent(ASTBase *parent) {
     this->Parent = parent;
 }

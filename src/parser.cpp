@@ -53,9 +53,9 @@ static std::map<std::string, Token> KeyWordTkMap = {
     {"def", tok_def}, {"extern", tok_extern}, {"if", tok_if}, {"for", tok_for}, {"while", tok_while},
     {"else", tok_else}, {"then", tok_then}, {"in", tok_in}, {"return", tok_return}, {"continue", tok_continue},
     {"break", tok_break}, {"struct", tok_struct}, {"switch", tok_switch}, {"case", tok_case}, {"default", tok_default},
-    {"true", tok_true}, {"false", tok_false}, {"bool", tok_bool}, {"char", tok_char}, {"uchar", tok_uchar},
+    {"true", tok_true}, {"false", tok_false}, {"void", tok_void}, {"bool", tok_bool}, {"char", tok_char}, {"uchar", tok_uchar},
     {"short", tok_short}, {"ushort", tok_ushort}, {"int", tok_int}, {"uint", tok_uint}, {"long", tok_long},
-    {"ulong", tok_ulong}, {"float", tok_float}, {"double", tok_double}, {"import", tok_import}
+    {"ulong", tok_ulong}, {"float", tok_float}, {"double", tok_double}, {"import", tok_import}, {"const", tok_const}
 };
 
 
@@ -245,30 +245,273 @@ GrammerParser::GrammerParser(ProgramAST *prog) {
 }
 
 void GrammerParser::generateSrcToAst() {
-
+    parseProgram();
 }
 
-Token GrammerParser::getNextToken() {
-    CurTok = getNextToken();
+void GrammerParser::getNextToken() {
+    CurTok = TkParser->getToken();
 }
 
 void GrammerParser::parseProgram() {
 
+    assert(ProgAst && "Program ast can't be nullptr");
+
+    while(TkParser->lookUp(1)[0] != tok_eof) {
+        int tok = TkParser->lookUp(1)[0];
+        switch(tok) {
+            case tok_extern: {
+                switch(TkParser->lookUp(2)[1]) {
+                    case tok_id: {
+                        ProgAst->addChild(parseFuncExtern());
+                    }
+                    default:{
+                        ProgAst->addChilds(parseVarExtern());
+                    }
+                }
+                break;
+            }
+            case tok_import: {
+                parseImportDecl();
+                break;
+            }
+            case tok_def:{
+                ProgAst->addChild(parseFuncDef());
+                break;
+            }
+            default : {
+                ProgAst->addChilds(parseVarDef());
+                break;
+            }
+        }
+    }
 }
 
 KType GrammerParser::parseTypeDecl() {
-    return (KType)0;
+    getNextToken();
+    switch (CurTok)
+    {
+    case tok_void:
+        return Void;
+    case tok_double:
+        return Double;
+    case tok_float:
+        return Float;
+    case tok_bool:
+        return Bool;
+    case tok_char:
+        return Char;
+    case tok_uchar:
+        return UChar;
+    case tok_short:
+        return Short;
+    case tok_ushort:
+        return UShort;
+    case tok_int:
+        return Int;
+    case tok_uint:
+        return Uint;
+    case tok_long:
+        return Long;
+    case tok_ulong:
+        return ULong;
+    case tok_struct:
+        return Struct;
+    default:
+        LOG_ERROR("unsupport type declare", TkParser->getCurLineNo())
+    }
 }
 
-ASTBase *GrammerParser::parseExternDef()   { return nullptr; }
-ASTBase *GrammerParser::parseVarExtern()   { return nullptr; }
-ASTBase *GrammerParser::parseFuncExtern()  { return nullptr; }
-ASTBase *GrammerParser::parseVarDef()      { return nullptr; }
-ASTBase *GrammerParser::parseInitExpr()    { return nullptr; }
+
+std::vector<ASTBase*> GrammerParser::parseVarExtern()   {
+
+    // eat extern
+    getNextToken();
+
+    bool isConst = false;
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        getNextToken();
+        isConst = true;
+    }
+
+    KType type = parseTypeDecl();
+    std::vector<ASTBase*> externVarList;
+    LineNo line;
+    VarDefAST *def;
+    while(TkParser->lookUp(1)[0] != ';') {
+        
+        line = TkParser->getCurLineNo();
+        // eat id
+        getNextToken();
+
+        if(CurTok != tok_id) {
+            LOG_ERROR("Illegal variable extern declare", line);
+        }
+
+        def = new VarDefAST(line, TkParser->getIdStr(), type);
+        def->setIsConst(isConst);
+
+        while(TkParser->lookUp(1)[0] == '[') {
+            // eat '['
+            getNextToken();
+            
+            line = TkParser->getCurLineNo();
+            if(TkParser->lookUp(1)[0] != ']'){
+                LOG_ERROR("not have dim declare", line)
+            } 
+
+            def->addChild(parseExpr());
+
+            line = TkParser->getCurLineNo();
+            getNextToken();
+
+            if(CurTok != ']') {
+                LOG_ERROR("missing ']'", line)
+            }
+
+        }
+
+        externVarList.push_back(def);
+
+        if(TkParser->lookUp(1)[0] == ',') {
+            getNextToken();
+        }
+    }
+
+    // eat ';'
+    getNextToken();
+
+    if(CurTok != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    return externVarList;
+}
+
+
+ASTBase *GrammerParser::parseFuncExtern()  {
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat exteran
+    getNextToken();
+
+    // eat id
+    getNextToken();
+
+    FuncAST *funcExtern = new FuncAST(line, TkParser->getIdStr(), Void);
+
+    // parse params
+    if(TkParser->lookUp(1)[0] != '(') {
+        LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
+    }
+
+    // eat '('
+    getNextToken();
+    while(TkParser->lookUp(1)[0] != ')') {
+        funcExtern->addFuncParam(parseParamDecl());
+        line = TkParser->getCurLineNo();
+        if(TkParser->lookUp(1)[0] == ',') {
+            // eat ','
+            getNextToken();
+        }
+        else {
+            LOG_ERROR("missing ')'", line)
+        }
+    }
+
+    // eat ')'
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] == ':') {
+        getNextToken();
+        funcExtern->setRetType(parseTypeDecl());
+    }
+
+    if(TkParser->lookUp(1)[0] != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    // eat ';'
+    getNextToken();
+
+    return funcExtern;
+}
+
+
+
+std::vector<ASTBase*> GrammerParser::parseVarDef() {
+    
+    bool isConst = false;
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        getNextToken();
+        isConst = true;
+    }
+
+    KType type = parseTypeDecl();
+    std::vector<ASTBase*> externVarList;
+    LineNo line;
+    VarDefAST *def;
+    while(TkParser->lookUp(1)[0] != ';') {
+        
+        line = TkParser->getCurLineNo();
+        // eat id
+        getNextToken();
+
+        if(CurTok != tok_id) {
+            LOG_ERROR("Illegal variable extern declare", line);
+        }
+
+        def = new VarDefAST(line, TkParser->getIdStr(), type);
+        def->setIsConst(isConst);
+
+        while(TkParser->lookUp(1)[0] == '[') {
+            // eat '['
+            getNextToken();
+            
+            line = TkParser->getCurLineNo();
+            if(TkParser->lookUp(1)[0] != ']'){
+                LOG_ERROR("not have dim declare", line)
+            } 
+
+            def->addChild(parseExpr());
+
+            line = TkParser->getCurLineNo();
+            getNextToken();
+
+            if(CurTok != ']') {
+                LOG_ERROR("missing ']'", line)
+            }
+
+        }
+
+        if(TkParser->lookUp(1)[0] == tok_assign) {
+            // eat assign
+            getNextToken();
+            // 
+            def->setInitExpr(parseInitExpr());
+        }
+
+        externVarList.push_back(def);
+
+        if(TkParser->lookUp(1)[0] == ',') {
+            getNextToken();
+        }
+    }
+
+    // eat ';'
+    getNextToken();
+
+    if(CurTok != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    return externVarList;
+
+}
+InitializedAST *GrammerParser::parseInitExpr()    { return nullptr; }
 ASTBase *GrammerParser::parseFuncDef()     { return nullptr; }
 ASTBase *GrammerParser::parseImportDecl()  { return nullptr; }
 ASTBase *GrammerParser::parseParamList()   { return nullptr; }
-ASTBase *GrammerParser::parseParamDecl()   { return nullptr; }
+ParamAST *GrammerParser::parseParamDecl()   { return nullptr; }
 ASTBase *GrammerParser::parseStmt()        { return nullptr; }
 ASTBase *GrammerParser::parseBlockStmt()   { return nullptr; }
 ASTBase *GrammerParser::parseIfStmt()      { return nullptr; }

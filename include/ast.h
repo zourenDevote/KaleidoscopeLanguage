@@ -48,6 +48,7 @@ public:
 
    void setId(KAstId id);
    void addChild(ASTBase *child);
+   void addChilds(const std::vector<ASTBase*>&);
    void setParent(ASTBase *parent);
    void setLineNo(const LineNo&);
    void setProgram(ProgramAST *prog);
@@ -113,6 +114,7 @@ private:
     KType Type;
     std::vector<int> ArrayDims;
     int ArrayDim;
+    bool IsConst;
     Value *Val;
 public:
     ParamAST(const LineNo&, const std::string&, KType);
@@ -120,12 +122,14 @@ public:
     void addArrayDim(int dim) { ArrayDims.push_back(dim); }
     void arrayDimAdd() { ArrayDim++; }
     void setLLVMValue(Value *v) { Val = v; }
+    void setIsConst(bool isConst) { IsConst = isConst; }
 
     const std::string& getParamName() { return Name; }
     KType getParamType() { return Type; }
     Value *getLLVMValue() { return Val; }
     const std::vector<int>& getArrayDims() { return ArrayDims; }
     int getArrayDim() { return ArrayDim; }
+    bool isConst() { return IsConst; }
 };
 
 
@@ -202,19 +206,25 @@ private:
     StructDefAST *StructDef{nullptr}; // 对应的结构体变量定义指针，暂时不支持，留空
     std::string VarName;              // 变量名
     KType VarType;                    // 变量类型
-    Value *Val{nullptr};              // 对应的llvmalue
+    bool IsConst;                     // 是否是const
+    Value *Val{nullptr};              // 对应的llvm value
+    InitializedAST *Init{nullptr};    // initialize expression
 public:
     VarDefAST(const LineNo&, const std::string&, KType);
 
     void setStructDefAST(StructDefAST *sdef) { StructDef = sdef; }
     void setVarName(const std::string& name) { VarName = name; }
     void setVarType(KType type)              { VarType = type; }
+    void setIsConst(bool flag)               { IsConst = flag; }
     void setLLVMValue(Value *v)              { Val = v; }
+    void setInitExpr(InitializedAST *init)   { Init = init; }
     
     StructDefAST *getStructDefAST() { return StructDef; }
     std::string getVarName()        { return VarName; }
     Value *getLLVMValue()           { return Val; }
+    InitializedAST *getInitExpr()   { return Init; }
     KType getVarType()              { return VarType; }
+    bool isConst() { return IsConst; }
 };  
 
 
