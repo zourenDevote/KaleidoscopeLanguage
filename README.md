@@ -69,7 +69,7 @@ funcExtern : EXTERN ID '(' paramList* ')' (':' typeDecl)? ';'
 
 varDef : typeDecl ID ('['expr']')* ('=' initExpr)? ';'
 
-initExpr : expr | '{' expr (',' (expr | initExpr) )* '}' 
+initExpr : expr | '{' ((expr | initExpr) (',' (expr | initExpr) )*)? '}' 
 
 funcDef : DEF ID '(' paramList* ')' (':' typeDecl)? blockStmt
 
