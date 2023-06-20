@@ -58,7 +58,7 @@ private:
     std::vector<ASTBase*> parseVarExtern();
     ASTBase *parseFuncExtern();
     std::vector<ASTBase*> parseVarDef();
-    InitializedAST *parseInitExpr();
+    ASTBase *parseInitExpr();
     ASTBase *parseFuncDef();
     ASTBase *parseImportDecl();
     ASTBase *parseParamList();

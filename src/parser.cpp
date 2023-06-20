@@ -257,8 +257,7 @@ void GrammerParser::parseProgram() {
     assert(ProgAst && "Program ast can't be nullptr");
 
     while(TkParser->lookUp(1)[0] != tok_eof) {
-        int tok = TkParser->lookUp(1)[0];
-        switch(tok) {
+        switch(TkParser->lookUp(1)[0]) {
             case tok_extern: {
                 switch(TkParser->lookUp(2)[1]) {
                     case tok_id: {
@@ -442,6 +441,7 @@ std::vector<ASTBase*> GrammerParser::parseVarDef() {
     
     bool isConst = false;
     if(TkParser->lookUp(1)[0] == tok_const) {
+        // eat const
         getNextToken();
         isConst = true;
     }
@@ -507,23 +507,329 @@ std::vector<ASTBase*> GrammerParser::parseVarDef() {
     return externVarList;
 
 }
-InitializedAST *GrammerParser::parseInitExpr()    { return nullptr; }
-ASTBase *GrammerParser::parseFuncDef()     { return nullptr; }
-ASTBase *GrammerParser::parseImportDecl()  { return nullptr; }
+
+
+ASTBase *GrammerParser::parseInitExpr()    {
+    if(TkParser->lookUp(1)[0] == '{') {
+        InitializedAST *init = new InitializedAST(TkParser->getCurLineNo());
+        // eat '{'
+        while(TkParser->lookUp(1)[0] != '}') {
+            if(TkParser->lookUp(1)[0] == '{') {
+                init->addChild(parseInitExpr());
+            }
+            else{
+                init->addChild(parseExpr());
+            }
+
+            if(TkParser->lookUp(1)[0] == ',')
+                getNextToken();
+        }
+
+        // eat '}'
+        getNextToken();
+
+        return init;
+    }
+    return parseExpr();
+}
+
+
+ASTBase *GrammerParser::parseFuncDef()     { 
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat def
+    getNextToken();
+
+    // eat id
+    getNextToken();
+
+    FuncAST *funcDef = new FuncAST(line, TkParser->getIdStr(), Void);
+
+    // parse params
+    if(TkParser->lookUp(1)[0] != '(') {
+        LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
+    }
+
+    // eat '('
+    getNextToken();
+    while(TkParser->lookUp(1)[0] != ')') {
+        funcDef->addFuncParam(parseParamDecl());
+        line = TkParser->getCurLineNo();
+        if(TkParser->lookUp(1)[0] == ',') {
+            // eat ','
+            getNextToken();
+        }
+        else {
+            LOG_ERROR("missing ')'", line)
+        }
+    }
+
+    // eat ')'
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] == ':') {
+        getNextToken();
+        funcDef->setRetType(parseTypeDecl());
+    }
+
+    if(TkParser->lookUp(1)[0] != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    funcDef->addChild(parseBlockStmt());
+
+    return funcDef;
+}
+
+
+ASTBase *GrammerParser::parseImportDecl()  {
+
+    // eat import
+    getNextToken();
+    // eat literal
+    getNextToken();
+    // eat ';'
+    getNextToken();
+
+    return nullptr;
+}
+
+
 ASTBase *GrammerParser::parseParamList()   { return nullptr; }
-ParamAST *GrammerParser::parseParamDecl()   { return nullptr; }
-ASTBase *GrammerParser::parseStmt()        { return nullptr; }
-ASTBase *GrammerParser::parseBlockStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseIfStmt()      { return nullptr; }
-ASTBase *GrammerParser::parseExprStmt()    { return nullptr; }
-ASTBase *GrammerParser::parseForStmt()     { return nullptr; }
-ASTBase *GrammerParser::parseWhileStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseReturnStmt()  { return nullptr; }
-ASTBase *GrammerParser::parseBreakStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseContinueStmt(){ return nullptr; }
+
+
+ParamAST *GrammerParser::parseParamDecl()   {
+
+    LineNo line = TkParser->getCurLineNo();
+    bool isConst = false;
+
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        getNextToken();
+        isConst = true;
+    }
+
+    // eat type
+    KType type = parseTypeDecl();
+
+    // eat id
+    getNextToken();
+
+    ParamAST *param = new ParamAST(line, TkParser->getIdStr(), type);
+    param->setIsConst(isConst);
+
+    while(TkParser->lookUp(1)[0] == '[') {
+        // eat '['
+        getNextToken();
+
+        if(TkParser->lookUp(1)[0] == ']') {
+            getNextToken();
+            param->arrayDimAdd();
+            continue;
+        }
+
+        // eat number
+        getNextToken();
+        param->arrayDimAdd();
+        param->addArrayDim(TkParser->getIntVal());
+
+        // eat ']'
+        getNextToken();
+    }
+    
+    return param;
+}
+
+
+ASTBase *GrammerParser::parseStmt()        {
+
+    int tk = TkParser->lookUp(1)[0];
+    switch(tk) {
+        case tok_return: {
+            return parseReturnStmt();
+        }
+        case tok_continue: {
+            return parseContinueStmt();
+        }
+        case tok_break:{
+            return parseBreakStmt();
+        }
+        case tok_for:{
+            return parseForStmt();
+        }
+        case tok_while:{
+            return parseWhileStmt();
+        }
+        case tok_if:{
+            return parseIfStmt();
+        }
+        case '{':{
+            return parseBlockStmt();
+        }
+        case tok_switch:{
+            return parseSwitchStmt();
+        }
+        default:{
+            return parseExprStmt();
+        }
+    }
+}
+
+
+ASTBase *GrammerParser::parseBlockStmt()   {
+
+    LineNo line = TkParser->getCurLineNo();
+    // eat '{'
+    getNextToken();
+
+    BlockStmtAST *block = new BlockStmtAST(line);
+
+    while(TkParser->lookUp(1)[0] != '}')  {
+        block->addChild(parseStmt());
+    }
+
+    getNextToken();
+    // eat '}'
+
+    return block;
+}
+
+
+ASTBase *GrammerParser::parseIfStmt()      {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'if'
+    getNextToken();
+
+    ASTBase *expr = parseExpr();
+
+    IfStmtAST *ifStmt = new IfStmtAST(line, expr);
+
+    ifStmt->setStatement(parseStmt());
+
+    if(TkParser->lookUp(1)[0] == tok_else) {
+        // eat else
+        getNextToken();
+        ASTBase *elseStmt = parseStmt();
+        ifStmt->setElse(elseStmt);
+    }
+
+    return ifStmt;
+}
+
+
+ASTBase *GrammerParser::parseExprStmt()    {
+
+    ASTBase *expr = parseExpr();
+
+    // eat ';'
+    getNextToken();
+
+    return expr;
+}
+
+
+ASTBase *GrammerParser::parseForStmt()     {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'for'
+    getNextToken();
+
+    ASTBase *expr1 = nullptr, *expr2 = nullptr, *expr3 = nullptr;
+
+    // eat '('
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ',') {
+        expr1 = parseExpr();
+    }
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ',') {
+        expr2 = parseExpr();
+    }
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != tok_in) {
+        expr3 = parseExpr();
+    }
+
+    // eat ')'
+    getNextToken();
+
+    // eat 'in'
+    getNextToken();
+
+    ForStmtAST *forStmt = new ForStmtAST(line, expr1, expr2, expr3);
+
+    forStmt->setStatement(parseStmt());
+
+    return forStmt;
+}
+
+
+ASTBase *GrammerParser::parseWhileStmt()   {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'while'
+    getNextToken();
+
+    // eat '('
+    getNextToken();
+
+    ASTBase *expr = parseExpr();
+
+    // eat ')'
+    getNextToken();
+
+    WhileStmtAST *whileStmt = new WhileStmtAST(line, expr);
+
+    whileStmt->setStatement(parseStmt());
+
+    return whileStmt;
+}
+
+
+ASTBase *GrammerParser::parseReturnStmt()  {
+
+    ReturnStmtAST *returnStmt = new ReturnStmtAST(TkParser->getCurLineNo());
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ';') {
+        returnStmt->addChild(parseExpr());
+    }
+    
+    getNextToken();
+
+    return returnStmt;
+
+}
+
+
+ASTBase *GrammerParser::parseBreakStmt()   {
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    getNextToken();
+    return new BlockStmtAST(line);
+}
+
+
+ASTBase *GrammerParser::parseContinueStmt(){
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    getNextToken();
+    return new ContinueStmtAST(line);
+}
+
 ASTBase *GrammerParser::parseSwitchStmt()  { return nullptr; }
 ASTBase *GrammerParser::parseCaseStmt()    { return nullptr; }
 ASTBase *GrammerParser::parseDefault()     { return nullptr; }
+
 ASTBase *GrammerParser::parseExpr()        { return nullptr; }
 ASTBase *GrammerParser::parseLogicExpr()   { return nullptr; }
 ASTBase *GrammerParser::parseBitExpr()     { return nullptr; }

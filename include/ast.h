@@ -177,14 +177,8 @@ public:
 /// the initialize ast express 10 and {1,2,3}
 /// ------------------------------------------------------------------------
 class InitializedAST : public ASTBase {
-private:
-    /// @brief 初始化表达式
-    ASTBase *InitExpr;
 public:
-    InitializedAST(const LineNo&, ASTBase*);
-
-    void setInitExpr(ASTBase *expr) { InitExpr = expr; }
-    ASTBase *getInitExpr() { return InitExpr; }
+    InitializedAST(const LineNo&);
 };
 
 
@@ -208,7 +202,7 @@ private:
     KType VarType;                    // 变量类型
     bool IsConst;                     // 是否是const
     Value *Val{nullptr};              // 对应的llvm value
-    InitializedAST *Init{nullptr};    // initialize expression
+    ASTBase *Init{nullptr};    // initialize expression
 public:
     VarDefAST(const LineNo&, const std::string&, KType);
 
@@ -217,15 +211,47 @@ public:
     void setVarType(KType type)              { VarType = type; }
     void setIsConst(bool flag)               { IsConst = flag; }
     void setLLVMValue(Value *v)              { Val = v; }
-    void setInitExpr(InitializedAST *init)   { Init = init; }
+    void setInitExpr(ASTBase *init)          { Init = init; }
     
     StructDefAST *getStructDefAST() { return StructDef; }
     std::string getVarName()        { return VarName; }
     Value *getLLVMValue()           { return Val; }
-    InitializedAST *getInitExpr()   { return Init; }
+    ASTBase *getInitExpr()          { return Init; }
     KType getVarType()              { return VarType; }
     bool isConst() { return IsConst; }
 };  
+
+/// ------------------------------------------------------------------------
+/// @brief BlockStmt AST express for statements in kaleidoscope
+/// ------------------------------------------------------------------------
+class BlockStmtAST : public ASTBase {
+public:
+    BlockStmtAST(const LineNo&);
+};
+
+/// ------------------------------------------------------------------------
+/// @brief ReturnStmt AST express for return in kaleidoscope
+/// ------------------------------------------------------------------------
+class ReturnStmtAST : public ASTBase {
+public:
+    ReturnStmtAST(const LineNo&);
+};
+
+/// ------------------------------------------------------------------------
+/// @brief BreakStmt AST express for break in kaleidoscope
+/// ------------------------------------------------------------------------
+class BreakStmtAST : public ASTBase {
+public:
+    BreakStmtAST(const LineNo&);
+};
+
+/// ------------------------------------------------------------------------
+/// @brief ContinueStmt AST express for continue in kaleidoscope
+/// ------------------------------------------------------------------------
+class ContinueStmtAST : public ASTBase {
+public:
+    ContinueStmtAST(const LineNo&);
+};
 
 
 /// ------------------------------------------------------------------------

@@ -108,9 +108,8 @@ FuncAST::FuncAST(const LineNo& lineNo, const std::string& funcName, KType retTyp
 
 /// ----------------------------------------------------------
 /// InitializedAST define code
-InitializedAST::InitializedAST(const LineNo& lineNo, ASTBase *expr) : ASTBase(lineNo) {
+InitializedAST::InitializedAST(const LineNo& lineNo) : ASTBase(lineNo) {
     setId(InitializeId);
-    this->InitExpr = expr;
 }
 /// ----------------------------------------------------------
 
@@ -128,6 +127,34 @@ VarDefAST::VarDefAST(const LineNo& lineNo, const std::string& name, KType type) 
     this->VarName = name;
     this->VarType = type;
 }   
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
+/// BlockStmtAST define code
+BlockStmtAST::BlockStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+    setId(BlockStmtId);
+}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
+/// ReturnStmtAST define code
+ReturnStmtAST::ReturnStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+    setId(ReturnStmtId);
+}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
+/// BreakStmtAST define code
+BreakStmtAST::BreakStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+    setId(BreakStmtId);
+}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
+/// ContinueStmtAST define code
+ContinueStmtAST::ContinueStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+    setId(ContinueStmtId);
+}
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
