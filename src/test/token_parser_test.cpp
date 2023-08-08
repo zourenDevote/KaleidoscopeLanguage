@@ -10,7 +10,7 @@ static const Token ParseResult[] = {
     tok_def, tok_extern, tok_if, tok_for, tok_while, tok_else, 
     tok_then, tok_in, tok_return, tok_continue, tok_break, tok_struct, 
     tok_switch, tok_case, tok_default, tok_import, tok_const, tok_id, tok_fnumber, tok_inumber, 
-    tok_true, tok_false, tok_literal, tok_void, tok_bool, tok_char, tok_uchar, 
+    tok_true, tok_false, tok_charlit, tok_literal, tok_void, tok_bool, tok_char, tok_uchar, 
     tok_short, tok_ushort, tok_int, tok_uint, tok_long, tok_ulong, 
     tok_float, tok_double, tok_add, tok_sub, tok_mul, tok_div, 
     tok_assign, tok_eq, tok_neq, tok_dot, tok_gt, tok_ge, 

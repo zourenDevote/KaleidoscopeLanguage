@@ -90,4 +90,7 @@ enum Operator {
     BitXor,             /* operator ^   */
 };
 
+#define INSERT_ACCEPT void accept(AstVisitor &v) override; 
+
+
 #endif 

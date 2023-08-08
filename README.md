@@ -117,7 +117,8 @@ addExpr : mulExpr ('+' | '-') mulExpr
 
 mulExpr : unaryExpr ('*' | '/') unaryExpr
 
-unaryExpr : ('+' | '-' | '!') primaryExpr
+unaryExpr : ('+' | '-' | '!') unaryExpr
+		  | primaryExpr
 
 primaryExpr : '(' expr ')'
 			| idRef

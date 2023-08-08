@@ -30,6 +30,7 @@ enum Token {
   tok_inumber,             // --> int number
   tok_true,                // --> true
   tok_false,               // --> false
+  tok_charlit,             // --> char literal 'x' 
   tok_literal,             // --> string literal
 
   // type
