@@ -52,18 +52,17 @@ public:
     explicit GrammerParser(ProgramAST *prog);
     void generateSrcToAst();
 private:
-    Token getNextToken();
+    void getNextToken();
     void parseProgram();
     KType parseTypeDecl();
-    ASTBase *parseExternDef();
-    ASTBase *parseVarExtern();
+    std::vector<ASTBase*> parseVarExtern();
     ASTBase *parseFuncExtern();
-    ASTBase *parseVarDef();
+    std::vector<ASTBase*> parseVarDef();
     ASTBase *parseInitExpr();
     ASTBase *parseFuncDef();
     ASTBase *parseImportDecl();
     ASTBase *parseParamList();
-    ASTBase *parseParamDecl();
+    ParamAST *parseParamDecl();
     ASTBase *parseStmt();
     ASTBase *parseBlockStmt();
     ASTBase *parseIfStmt();

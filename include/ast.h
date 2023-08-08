@@ -21,6 +21,7 @@ struct LineNo {
 
 class ProgramAST;
 class AstVisitor;
+class ExprAST;
 
 
 /// ------------------------------------------------------------------------
@@ -35,7 +36,10 @@ protected:
     ASTBase *Parent{nullptr};
     ProgramAST *Program;
     std::vector<ASTBase*> Childs;
-    KAstId Id;
+
+public:
+    virtual void accept(AstVisitor &v) = 0;
+
 public:
     using NodeIter = std::vector<ASTBase*>::iterator; 
     using CNodeIter = std::vector<ASTBase*>::const_iterator; 
@@ -44,14 +48,11 @@ public:
 
     ASTBase(const LineNo&);
 
-   virtual void accept(AstVisitor *v);
-
-   void setId(KAstId id);
    void addChild(ASTBase *child);
+   void addChilds(const std::vector<ASTBase*>&);
    void setParent(ASTBase *parent);
    void setLineNo(const LineNo&);
    void setProgram(ProgramAST *prog);
-
 
 
     bool childEmpty();
@@ -63,12 +64,17 @@ public:
     CNodeIter cend();
     CRNodeIter crbegin();
     CRNodeIter crend();
+
     virtual ASTBase* deepCopy() { return nullptr; }
-    ASTBase *getChild(unsigned int index);
-    LineNo *getLineNo() { return &LineMsg; }
-    ASTBase *getParent() { return Parent; }
-    ProgramAST *getProgram() { return Program; }
-    KAstId id() const { return Id; }
+    
+    ASTBase     *getChild(unsigned int index);
+    LineNo      *getLineNo()    { return &LineMsg; }
+    ASTBase     *getParent()    { return Parent; }
+    ProgramAST  *getProgram()   { return Program; }
+    const std::vector<ASTBase*> &getChilds() { return Childs; }
+
+public:
+    virtual KAstId getClassId() = 0;    
 };
 
 
@@ -87,6 +93,13 @@ private:
     };
     std::vector<ProgramAST*> DependentProg; // 依赖项
     CompiledFlag CompFlag{NotCompiled};     // 处理状态
+
+public:
+    KAstId getClassId() override { return ProgramID; }
+
+public:
+    INSERT_ACCEPT
+
 public:
     explicit ProgramAST(const LineNo&);
     /// @brief 添加program的依赖项
@@ -113,19 +126,29 @@ private:
     KType Type;
     std::vector<int> ArrayDims;
     int ArrayDim;
+    bool IsConst;
     Value *Val;
+
+public:
+    KAstId getClassId() override { return FuncParamId; }
+
+public:
+    INSERT_ACCEPT
+
 public:
     ParamAST(const LineNo&, const std::string&, KType);
 
     void addArrayDim(int dim) { ArrayDims.push_back(dim); }
     void arrayDimAdd() { ArrayDim++; }
     void setLLVMValue(Value *v) { Val = v; }
+    void setIsConst(bool isConst) { IsConst = isConst; }
 
     const std::string& getParamName() { return Name; }
     KType getParamType() { return Type; }
     Value *getLLVMValue() { return Val; }
     const std::vector<int>& getArrayDims() { return ArrayDims; }
     int getArrayDim() { return ArrayDim; }
+    bool isConst() { return IsConst; }
 };
 
 
@@ -139,6 +162,11 @@ private:
     std::string FuncName;                    // 函数名
     std::vector<ParamAST *> FuncParams;      // 函数参数列表
     KType RetType;                           // 返回值类型
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return FuncId; }
 public:
     FuncAST(const LineNo&, const std::string&, KType);
 
@@ -173,14 +201,17 @@ public:
 /// the initialize ast express 10 and {1,2,3}
 /// ------------------------------------------------------------------------
 class InitializedAST : public ASTBase {
-private:
-    /// @brief 初始化表达式
-    ASTBase *InitExpr;
 public:
-    InitializedAST(const LineNo&, ASTBase*);
+    InitializedAST(const LineNo&);
 
-    void setInitExpr(ASTBase *expr) { InitExpr = expr; }
-    ASTBase *getInitExpr() { return InitExpr; }
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return InitializeId; }
+
+private:
+    ExprAST *InitExpr;
+    InitializedAST *Next;
 };
 
 
@@ -191,6 +222,11 @@ public:
 class StructDefAST : public ASTBase{
 public:
     explicit StructDefAST(const LineNo&);
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return StructId; }
 };
 
 
@@ -202,20 +238,83 @@ private:
     StructDefAST *StructDef{nullptr}; // 对应的结构体变量定义指针，暂时不支持，留空
     std::string VarName;              // 变量名
     KType VarType;                    // 变量类型
-    Value *Val{nullptr};              // 对应的llvmalue
+    bool IsConst;                     // 是否是const
+    Value *Val{nullptr};              // 对应的llvm value
+    ASTBase *Init{nullptr};    // initialize expression
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return VarDefId; }
 public:
     VarDefAST(const LineNo&, const std::string&, KType);
 
     void setStructDefAST(StructDefAST *sdef) { StructDef = sdef; }
     void setVarName(const std::string& name) { VarName = name; }
     void setVarType(KType type)              { VarType = type; }
+    void setIsConst(bool flag)               { IsConst = flag; }
     void setLLVMValue(Value *v)              { Val = v; }
+    void setInitExpr(ASTBase *init)          { Init = init; }
     
     StructDefAST *getStructDefAST() { return StructDef; }
     std::string getVarName()        { return VarName; }
     Value *getLLVMValue()           { return Val; }
+    ASTBase *getInitExpr()          { return Init; }
     KType getVarType()              { return VarType; }
+    bool isConst() { return IsConst; }
 };  
+
+/// ------------------------------------------------------------------------
+/// @brief BlockStmt AST express for statements in kaleidoscope
+/// ------------------------------------------------------------------------
+class BlockStmtAST : public ASTBase {
+public:
+    BlockStmtAST(const LineNo&);
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return BlockStmtId; }
+};
+
+/// ------------------------------------------------------------------------
+/// @brief ReturnStmt AST express for return in kaleidoscope
+/// ------------------------------------------------------------------------
+class ReturnStmtAST : public ASTBase {
+public:
+    ReturnStmtAST(const LineNo&);
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return ReturnStmtId; }
+};
+
+/// ------------------------------------------------------------------------
+/// @brief BreakStmt AST express for break in kaleidoscope
+/// ------------------------------------------------------------------------
+class BreakStmtAST : public ASTBase {
+public:
+    BreakStmtAST(const LineNo&);
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return BreakStmtId; }
+};
+
+/// ------------------------------------------------------------------------
+/// @brief ContinueStmt AST express for continue in kaleidoscope
+/// ------------------------------------------------------------------------
+class ContinueStmtAST : public ASTBase {
+public:
+    ContinueStmtAST(const LineNo&);
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return ContinueStmtId; }
+};
 
 
 /// ------------------------------------------------------------------------
@@ -226,6 +325,11 @@ private:
     ASTBase *Expr1;
     ASTBase *Expr2;
     ASTBase *Expr3;
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return ForStmtId; }
 public:
     ForStmtAST(const LineNo&, ASTBase*, ASTBase*, ASTBase*);
     ForStmtAST(const LineNo&);
@@ -252,6 +356,11 @@ public:
 class WhileStmtAST : public ASTBase {
 private:
     ASTBase *Cond;
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return WhileStmtId; }
 public: 
     explicit WhileStmtAST(const LineNo&, ASTBase*);
 
@@ -274,6 +383,11 @@ class IfStmtAST : public ASTBase {
 private:
     ASTBase *Cond;
     ASTBase *Else;
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return IfStmtId; }
 public:
     explicit IfStmtAST(const LineNo&, ASTBase*);
 
@@ -292,12 +406,27 @@ public:
 
 
 /// ------------------------------------------------------------------------
+/// @brief ExprAST the base class express ast node
+/// ------------------------------------------------------------------------
+class ExprAST : public ASTBase {
+public:
+    ExprAST(const LineNo& line) : ASTBase(line) {}
+};
+
+
+/// ------------------------------------------------------------------------
 /// @brief BinaryExpr AST expr binary expression in kaleidoscope for example
 /// BinaryExpr AST can express 1+3, a >= 8, a[1] = 10...
 /// ------------------------------------------------------------------------
-class BinaryExprAST : public ASTBase {
+class BinaryExprAST : public ExprAST {
 private:
     Operator Op;            // T <== The operator of the expression
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return BinExprId; }
+
 public:
     BinaryExprAST(const LineNo&, Operator, ASTBase*, ASTBase*);
     
@@ -310,7 +439,7 @@ public:
     Operator getExprOp() const { return Op; }
     ASTBase *getLhs() { return getChild(0); }
     ASTBase *getRhs() { return getChild(1); }
-public:
+
 };
 
 
@@ -318,10 +447,14 @@ public:
 /// @brief Unary Expr AST express the unary expression in kaleiodscope such
 /// as '-a', '!b', '!(a>b)' ...
 /// ------------------------------------------------------------------------
-class UnaryExprAST : public ASTBase {
+class UnaryExprAST : public ExprAST {
 private:
     Operator Op;
 
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return UnaryExprId; }
 public:
     UnaryExprAST(const LineNo&, Operator, ASTBase*);
 
@@ -334,9 +467,14 @@ public:
 /// @brief Literal Expr AST express the str literalalue in kaleidoscope
 /// such as "aaa", "bbb", "cds".
 /// ------------------------------------------------------------------------
-class LiteralExprAST : public ASTBase {
+class LiteralExprAST : public ExprAST {
 private:
     std::string Str;
+
+public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return LiteralId; }
 public:
     LiteralExprAST(const LineNo&);
     LiteralExprAST(const LineNo&, const std::string&);
@@ -351,60 +489,57 @@ public:
 /// @brief Number Expr AST express the number literat in kaleidoscope, such 
 /// as 10, 10.0, true, false...
 /// ------------------------------------------------------------------------
-class NumberExprAST : public ASTBase {
+class NumberExprAST : public ExprAST {
 private:
-    KType Type;
-    union {
-        char C;
-        unsigned char Uc;
-        short S;
-        unsigned short Us;
-        int I;
-        unsigned int Ui;
-        long L;
-        unsigned long Ul;
-        double D;
-        float F;
-        bool B;
-    } LitValue;
+    bool IsBool{false};
+    bool IsLong{false};
+    bool IsDouble{false};  
+    bool IsChar{false};
+
+    char CValue;
+    bool BValue;
+    long LValue;
+    double DValue;
 
 public:
+    INSERT_ACCEPT
+
+    KAstId getClassId() override { return NumberId; }
+public: 
     explicit NumberExprAST(const LineNo&, char);
-    explicit NumberExprAST(const LineNo&, unsigned char);
-    explicit NumberExprAST(const LineNo&, short);
-    explicit NumberExprAST(const LineNo&, unsigned short);
-    explicit NumberExprAST(const LineNo&, int);
-    explicit NumberExprAST(const LineNo&, unsigned int);
     explicit NumberExprAST(const LineNo&, long);
-    explicit NumberExprAST(const LineNo&, unsigned long);
     explicit NumberExprAST(const LineNo&, double);
-    explicit NumberExprAST(const LineNo&, float);
     explicit NumberExprAST(const LineNo&, bool);
 
-    KType getType() { return Type; }
-    char getCharValue() { return LitValue.C; }
-    unsigned char getUCharValue() { return LitValue.Uc; }
-    short getShortValue() { return LitValue.S; }
-    unsigned short getUShortValue() { return LitValue.Us; }
-    int getIntValue() { return LitValue.I; }
-    unsigned int getUIntValue() { return LitValue.Ui; }
-    long getLongValue() { return LitValue.L; }
-    unsigned long getULongValue() { return LitValue.Ul; }
-    double getDoubleValue() { return LitValue.D; }
-    float getFloatValue() { return LitValue.F; }
-    bool getBoolValue() { return LitValue.B; }
+    bool isBoolLiteral() { return IsBool; }
+    bool isLong() { return IsLong; }
+    bool isDouble() { return IsDouble; }
+
+    char getCharValue() { return CValue; }
+    unsigned char getUCharValue() { return (unsigned char)LValue; }
+    short getShortValue() { return (short)LValue; }
+    unsigned short getUShortValue() { return (unsigned short)LValue; }
+    int getIntValue() { return (int)LValue; }
+    unsigned int getUIntValue() { return(unsigned int)LValue; }
+    long getLongValue() { return LValue; }
+    unsigned long getULongValue() { return (unsigned long)LValue; }
+    double getDoubleValue() { return DValue; }
+    float getFloatValue() { return (float)DValue; }
+    bool getBoolValue() { return BValue; }
 }; 
 
 
 /// ------------------------------------------------------------------------
 /// @brief Id Ref AST express the id ref ofariable
 /// ------------------------------------------------------------------------
-class IdRefAST : public ASTBase {
+class IdRefAST : public ExprAST {
 private:
     const std::string     IdName;             //ar name
     ParamAST             *Param{nullptr};     // param define
     VarDefAST            *VarDef{nullptr};    //ar define
 public:
+    KAstId getClassId() override { return IdRefId; }
+
     explicit IdRefAST(const LineNo&, const std::string&);
 
     void setVarDef(VarDefAST*ar) { VarDef =ar; }
@@ -414,13 +549,17 @@ public:
     ParamAST *getParam() const { return Param; }
     VarDefAST *getVarDef() const { return VarDef; }
     std::string getIdName() const { return IdName; }
+
+public:
+    INSERT_ACCEPT
+
 };
 
 
 /// ------------------------------------------------------------------------
 /// @brief Id Indexes Ref express the id indexed ref of arrayariable
 /// ------------------------------------------------------------------------
-class IdIndexedRefAST : public ASTBase {
+class IdIndexedRefAST : public ExprAST {
 private:
     std::vector<ASTBase*> Indexes;             // indexes list
     const std::string     IdName;              //ar name
@@ -428,6 +567,8 @@ private:
     VarDefAST             *VarDef{nullptr};    //ar define
 public:
     explicit IdIndexedRefAST(const LineNo&, const std::string&);
+
+    KAstId getClassId() override { return IdIndexedRefId; }
 
     void addIndex(ASTBase *expr) { Indexes.push_back(expr); }
     void setVarDef(VarDefAST *var) { VarDef = var; }
@@ -438,28 +579,35 @@ public:
     std::string getIdName() const { return IdName; }
     VarDefAST  *getVarDef() const { return VarDef; }
     const std::vector<ASTBase*>& getIndexes() const { return Indexes; }
+
+public:
+    INSERT_ACCEPT
 };
 
 
 /// ------------------------------------------------------------------------
 /// @brief Call Expr AST express function call expr
 /// ------------------------------------------------------------------------
-class CallExprAST : public ASTBase {
+class CallExprAST : public ExprAST {
 private:
     FuncAST *TheCallFunction{nullptr};          // 对应的LLVM Function指针
     const std::string FuncName;                 // 函数名
-    std::vector<ASTBase*> ParamList;            // 参数列表
 public:
     explicit CallExprAST(const LineNo&, const std::string&);
 
-    void setLLVMFunction(FuncAST *func) { this->TheCallFunction = func; }
-    void addParam(ASTBase *param) { this->ParamList.push_back(param); }
+    KAstId getClassId() override { return CallId; }
 
-    const std::vector<ASTBase*> getParamList() const { return this->ParamList; }
+    void setLLVMFunction(FuncAST *func) { this->TheCallFunction = func; }
+    void addParam(ASTBase *param) { addChild(param); }
+
+    const std::vector<ASTBase*> getParamList() const { return this->Childs; }
     llvm::Function *getLLVMFunction();
     const std::string& getName()               const { return this->FuncName; }
-    bool isParamListEmpty()                    const { return this->ParamList.empty(); }
-    
+    bool isParamListEmpty()                    const { return this->Childs.empty(); }
+
+
+public:
+    INSERT_ACCEPT
 };
 
 

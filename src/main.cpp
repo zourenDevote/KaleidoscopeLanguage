@@ -108,6 +108,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
+    /// @fixme ast generate test
+    GrammerParser *parser = new GrammerParser(ProgramList[0]);
+    parser->generateSrcToAst();
 
     /// 
+    return 0;
 }

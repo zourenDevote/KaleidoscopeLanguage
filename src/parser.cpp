@@ -53,9 +53,9 @@ static std::map<std::string, Token> KeyWordTkMap = {
     {"def", tok_def}, {"extern", tok_extern}, {"if", tok_if}, {"for", tok_for}, {"while", tok_while},
     {"else", tok_else}, {"then", tok_then}, {"in", tok_in}, {"return", tok_return}, {"continue", tok_continue},
     {"break", tok_break}, {"struct", tok_struct}, {"switch", tok_switch}, {"case", tok_case}, {"default", tok_default},
-    {"true", tok_true}, {"false", tok_false}, {"bool", tok_bool}, {"char", tok_char}, {"uchar", tok_uchar},
+    {"true", tok_true}, {"false", tok_false}, {"void", tok_void}, {"bool", tok_bool}, {"char", tok_char}, {"uchar", tok_uchar},
     {"short", tok_short}, {"ushort", tok_ushort}, {"int", tok_int}, {"uint", tok_uint}, {"long", tok_long},
-    {"ulong", tok_ulong}, {"float", tok_float}, {"double", tok_double}, {"import", tok_import}
+    {"ulong", tok_ulong}, {"float", tok_float}, {"double", tok_double}, {"import", tok_import}, {"const", tok_const}
 };
 
 
@@ -69,11 +69,11 @@ Token TokenParser::getToken() {
 
 
     /// parse import "xxx.k"
-    if(LastChar == '"') {
+    if(LastChar == '\"') {
         LiteralVal = "";
         getChar();
         // @TODO need to import check
-        while(LastChar != '"') {
+        while(LastChar != '\"') {
             LiteralVal += LastChar;
             getChar();
             // if(LastChar == '\n' || LastChar == ' ' || LastChar == '\r') {
@@ -82,6 +82,23 @@ Token TokenParser::getToken() {
         }
         getChar();
         return tok_literal;
+    }
+
+    if(LastChar == '\'') {
+        getChar();
+        if(LastChar == '\'') {
+            IntNumVal = '\0';
+            getChar();
+        }
+        else{
+            IntNumVal = LastChar;
+            getChar();
+            if(LastChar != '\''){
+                LOG_ERROR("error character", getCurLineNo());
+            }
+            getChar();
+        }
+        return tok_charlit;
     }
 
 
@@ -245,54 +262,857 @@ GrammerParser::GrammerParser(ProgramAST *prog) {
 }
 
 void GrammerParser::generateSrcToAst() {
-
+    parseProgram();
 }
 
-Token GrammerParser::getNextToken() {
-    CurTok = getNextToken();
+void GrammerParser::getNextToken() {
+    CurTok = TkParser->getToken();
 }
 
 void GrammerParser::parseProgram() {
 
+    assert(ProgAst && "Program ast can't be nullptr");
+
+    while(TkParser->lookUp(1)[0] != tok_eof) {
+        switch(TkParser->lookUp(1)[0]) {
+            case tok_extern: {
+                switch(TkParser->lookUp(2)[1]) {
+                    case tok_id: {
+                        ProgAst->addChild(parseFuncExtern());
+                    }
+                    default:{
+                        ProgAst->addChilds(parseVarExtern());
+                    }
+                }
+                break;
+            }
+            case tok_import: {
+                parseImportDecl();
+                break;
+            }
+            case tok_def:{
+                ProgAst->addChild(parseFuncDef());
+                break;
+            }
+            default : {
+                ProgAst->addChilds(parseVarDef());
+                break;
+            }
+        }
+    }
 }
 
 KType GrammerParser::parseTypeDecl() {
-    return (KType)0;
+    getNextToken();
+    switch (CurTok)
+    {
+    case tok_void:
+        return Void;
+    case tok_double:
+        return Double;
+    case tok_float:
+        return Float;
+    case tok_bool:
+        return Bool;
+    case tok_char:
+        return Char;
+    case tok_uchar:
+        return UChar;
+    case tok_short:
+        return Short;
+    case tok_ushort:
+        return UShort;
+    case tok_int:
+        return Int;
+    case tok_uint:
+        return Uint;
+    case tok_long:
+        return Long;
+    case tok_ulong:
+        return ULong;
+    case tok_struct:
+        return Struct;
+    default:
+        LOG_ERROR("unsupport type declare", TkParser->getCurLineNo())
+    }
 }
 
-ASTBase *GrammerParser::parseExternDef()   { return nullptr; }
-ASTBase *GrammerParser::parseVarExtern()   { return nullptr; }
-ASTBase *GrammerParser::parseFuncExtern()  { return nullptr; }
-ASTBase *GrammerParser::parseVarDef()      { return nullptr; }
-ASTBase *GrammerParser::parseInitExpr()    { return nullptr; }
-ASTBase *GrammerParser::parseFuncDef()     { return nullptr; }
-ASTBase *GrammerParser::parseImportDecl()  { return nullptr; }
+
+std::vector<ASTBase*> GrammerParser::parseVarExtern()   {
+
+    // eat extern
+    getNextToken();
+
+    bool isConst = false;
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        getNextToken();
+        isConst = true;
+    }
+
+    KType type = parseTypeDecl();
+    std::vector<ASTBase*> externVarList;
+    LineNo line;
+    VarDefAST *def;
+    while(TkParser->lookUp(1)[0] != ';') {
+        
+        line = TkParser->getCurLineNo();
+        // eat id
+        getNextToken();
+
+        if(CurTok != tok_id) {
+            LOG_ERROR("Illegal variable extern declare", line);
+        }
+
+        def = new VarDefAST(line, TkParser->getIdStr(), type);
+        def->setIsConst(isConst);
+
+        while(TkParser->lookUp(1)[0] == '[') {
+            // eat '['
+            getNextToken();
+            
+            line = TkParser->getCurLineNo();
+            if(TkParser->lookUp(1)[0] != ']'){
+                LOG_ERROR("not have dim declare", line)
+            } 
+
+            def->addChild(parseExpr());
+
+            line = TkParser->getCurLineNo();
+            getNextToken();
+
+            if(CurTok != ']') {
+                LOG_ERROR("missing ']'", line)
+            }
+
+        }
+
+        externVarList.push_back(def);
+
+        if(TkParser->lookUp(1)[0] == ',') {
+            getNextToken();
+        }
+    }
+
+    // eat ';'
+    getNextToken();
+
+    if(CurTok != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    return externVarList;
+}
+
+
+ASTBase *GrammerParser::parseFuncExtern()  {
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat exteran
+    getNextToken();
+
+    // eat id
+    getNextToken();
+
+    FuncAST *funcExtern = new FuncAST(line, TkParser->getIdStr(), Void);
+
+    // parse params
+    if(TkParser->lookUp(1)[0] != '(') {
+        LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
+    }
+
+    // eat '('
+    getNextToken();
+    while(TkParser->lookUp(1)[0] != ')') {
+        funcExtern->addFuncParam(parseParamDecl());
+        line = TkParser->getCurLineNo();
+        if(TkParser->lookUp(1)[0] == ',') {
+            // eat ','
+            getNextToken();
+        }
+        else {
+            LOG_ERROR("missing ')'", line)
+        }
+    }
+
+    // eat ')'
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] == ':') {
+        getNextToken();
+        funcExtern->setRetType(parseTypeDecl());
+    }
+
+    if(TkParser->lookUp(1)[0] != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    // eat ';'
+    getNextToken();
+
+    return funcExtern;
+}
+
+
+
+std::vector<ASTBase*> GrammerParser::parseVarDef() {
+    
+    bool isConst = false;
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        // eat const
+        getNextToken();
+        isConst = true;
+    }
+
+    KType type = parseTypeDecl();
+    std::vector<ASTBase*> externVarList;
+    LineNo line;
+    VarDefAST *def;
+    while(TkParser->lookUp(1)[0] != ';') {
+        
+        line = TkParser->getCurLineNo();
+        // eat id
+        getNextToken();
+
+        if(CurTok != tok_id) {
+            LOG_ERROR("Illegal variable extern declare", line);
+        }
+
+        def = new VarDefAST(line, TkParser->getIdStr(), type);
+        def->setIsConst(isConst);
+
+        while(TkParser->lookUp(1)[0] == '[') {
+            // eat '['
+            getNextToken();
+            
+            line = TkParser->getCurLineNo();
+            if(TkParser->lookUp(1)[0] != ']'){
+                LOG_ERROR("not have dim declare", line)
+            } 
+
+            def->addChild(parseExpr());
+
+            line = TkParser->getCurLineNo();
+            getNextToken();
+
+            if(CurTok != ']') {
+                LOG_ERROR("missing ']'", line)
+            }
+
+        }
+
+        if(TkParser->lookUp(1)[0] == tok_assign) {
+            // eat assign
+            getNextToken();
+            // 
+            def->setInitExpr(parseInitExpr());
+        }
+
+        externVarList.push_back(def);
+
+        if(TkParser->lookUp(1)[0] == ',') {
+            getNextToken();
+        }
+    }
+
+    // eat ';'
+    getNextToken();
+
+    if(CurTok != ';') {
+        LOG_ERROR("missing ';'", TkParser->getCurLineNo())
+    }
+
+    return externVarList;
+
+}
+
+
+ASTBase *GrammerParser::parseInitExpr()    {
+    if(TkParser->lookUp(1)[0] == '{') {
+        InitializedAST *init = new InitializedAST(TkParser->getCurLineNo());
+        // eat '{'
+        while(TkParser->lookUp(1)[0] != '}') {
+            if(TkParser->lookUp(1)[0] == '{') {
+                init->addChild(parseInitExpr());
+            }
+            else{
+                init->addChild(parseExpr());
+            }
+
+            if(TkParser->lookUp(1)[0] == ',')
+                getNextToken();
+        }
+
+        // eat '}'
+        getNextToken();
+
+        return init;
+    }
+    return parseExpr();
+}
+
+
+ASTBase *GrammerParser::parseFuncDef()     { 
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat def
+    getNextToken();
+
+    // eat id
+    getNextToken();
+
+    FuncAST *funcDef = new FuncAST(line, TkParser->getIdStr(), Void);
+
+    // parse params
+    if(TkParser->lookUp(1)[0] != '(') {
+        LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
+    }
+
+    // eat '('
+    getNextToken();
+    while(TkParser->lookUp(1)[0] != ')') {
+        funcDef->addFuncParam(parseParamDecl());
+        line = TkParser->getCurLineNo();
+        if(TkParser->lookUp(1)[0] == ',') {
+            // eat ','
+            getNextToken();
+        }
+        else {
+            LOG_ERROR("missing ')'", line)
+        }
+    }
+
+    // eat ')'
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] == ':') {
+        getNextToken();
+        funcDef->setRetType(parseTypeDecl());
+    }
+
+    funcDef->addChild(parseBlockStmt());
+
+    return funcDef;
+}
+
+
+ASTBase *GrammerParser::parseImportDecl()  {
+
+    // eat import
+    getNextToken();
+    // eat literal
+    getNextToken();
+    // eat ';'
+    getNextToken();
+
+    return nullptr;
+}
+
+
 ASTBase *GrammerParser::parseParamList()   { return nullptr; }
-ASTBase *GrammerParser::parseParamDecl()   { return nullptr; }
-ASTBase *GrammerParser::parseStmt()        { return nullptr; }
-ASTBase *GrammerParser::parseBlockStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseIfStmt()      { return nullptr; }
-ASTBase *GrammerParser::parseExprStmt()    { return nullptr; }
-ASTBase *GrammerParser::parseForStmt()     { return nullptr; }
-ASTBase *GrammerParser::parseWhileStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseReturnStmt()  { return nullptr; }
-ASTBase *GrammerParser::parseBreakStmt()   { return nullptr; }
-ASTBase *GrammerParser::parseContinueStmt(){ return nullptr; }
-ASTBase *GrammerParser::parseSwitchStmt()  { return nullptr; }
-ASTBase *GrammerParser::parseCaseStmt()    { return nullptr; }
-ASTBase *GrammerParser::parseDefault()     { return nullptr; }
-ASTBase *GrammerParser::parseExpr()        { return nullptr; }
-ASTBase *GrammerParser::parseLogicExpr()   { return nullptr; }
-ASTBase *GrammerParser::parseBitExpr()     { return nullptr; }
-ASTBase *GrammerParser::parseCmpExpr()     { return nullptr; }
-ASTBase *GrammerParser::parseBitMoveExpr() { return nullptr; }
-ASTBase *GrammerParser::parseAddExpr()     { return nullptr; }
-ASTBase *GrammerParser::parseMulExpr()     { return nullptr; }
-ASTBase *GrammerParser::parseUnaryExpr()   { return nullptr; }
-ASTBase *GrammerParser::parsePrimaryExpr() { return nullptr; }
-ASTBase *GrammerParser::parseIdRef()       { return nullptr; }
-ASTBase *GrammerParser::parseCallExpr()    { return nullptr; }
-ASTBase *GrammerParser::parseConstExpr()   { return nullptr; }
+
+
+ParamAST *GrammerParser::parseParamDecl()   {
+
+    LineNo line = TkParser->getCurLineNo();
+    bool isConst = false;
+
+    if(TkParser->lookUp(1)[0] == tok_const) {
+        getNextToken();
+        isConst = true;
+    }
+
+    // eat type
+    KType type = parseTypeDecl();
+
+    // eat id
+    getNextToken();
+
+    ParamAST *param = new ParamAST(line, TkParser->getIdStr(), type);
+    param->setIsConst(isConst);
+
+    while(TkParser->lookUp(1)[0] == '[') {
+        // eat '['
+        getNextToken();
+
+        if(TkParser->lookUp(1)[0] == ']') {
+            getNextToken();
+            param->arrayDimAdd();
+            continue;
+        }
+
+        // eat number
+        getNextToken();
+        param->arrayDimAdd();
+        param->addArrayDim(TkParser->getIntVal());
+
+        // eat ']'
+        getNextToken();
+    }
+    
+    return param;
+}
+
+
+ASTBase *GrammerParser::parseStmt()        {
+
+    int tk = TkParser->lookUp(1)[0];
+    switch(tk) {
+        case tok_return: {
+            return parseReturnStmt();
+        }
+        case tok_continue: {
+            return parseContinueStmt();
+        }
+        case tok_break:{
+            return parseBreakStmt();
+        }
+        case tok_for:{
+            return parseForStmt();
+        }
+        case tok_while:{
+            return parseWhileStmt();
+        }
+        case tok_if:{
+            return parseIfStmt();
+        }
+        case '{':{
+            return parseBlockStmt();
+        }
+        case tok_switch:{
+            return parseSwitchStmt();
+        }
+        case tok_bool:
+        case tok_int:
+        case tok_uint:
+        case tok_char:
+        case tok_uchar:
+        case tok_short:
+        case tok_ushort:
+        case tok_long:
+        case tok_ulong:
+        case tok_double:
+        case tok_float:
+            return nullptr;
+        default:{
+            return parseExprStmt();
+        }
+    }
+}
+
+
+ASTBase *GrammerParser::parseBlockStmt()   {
+
+    LineNo line = TkParser->getCurLineNo();
+    // eat '{'
+    getNextToken();
+
+    BlockStmtAST *block = new BlockStmtAST(line);
+
+    while(TkParser->lookUp(1)[0] != '}')  {
+        if(ASTBase* stmt = parseStmt()) {
+            block->addChild(stmt);
+        }
+        else {
+            block->addChilds(parseVarDef());
+        }
+    }
+
+    getNextToken();
+    // eat '}'
+
+    return block;
+}
+
+
+ASTBase *GrammerParser::parseIfStmt()      {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'if'
+    getNextToken();
+
+    ASTBase *expr = parseExpr();
+
+    IfStmtAST *ifStmt = new IfStmtAST(line, expr);
+
+    ifStmt->setStatement(parseStmt());
+
+    if(TkParser->lookUp(1)[0] == tok_else) {
+        // eat else
+        getNextToken();
+        ASTBase *elseStmt = parseStmt();
+        ifStmt->setElse(elseStmt);
+    }
+
+    return ifStmt;
+}
+
+
+ASTBase *GrammerParser::parseExprStmt()    {
+
+    ASTBase *expr = parseExpr();
+
+    // eat ';'
+    getNextToken();
+
+    return expr;
+
+}
+
+
+ASTBase *GrammerParser::parseForStmt()     {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'for'
+    getNextToken();
+
+    ASTBase *expr1 = nullptr, *expr2 = nullptr, *expr3 = nullptr;
+
+    // eat '('
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ',') {
+        expr1 = parseExpr();
+    }
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ',') {
+        expr2 = parseExpr();
+    }
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != tok_in) {
+        expr3 = parseExpr();
+    }
+
+    // eat ')'
+    getNextToken();
+
+    // eat 'in'
+    getNextToken();
+
+    ForStmtAST *forStmt = new ForStmtAST(line, expr1, expr2, expr3);
+
+    forStmt->setStatement(parseStmt());
+
+    return forStmt;
+}
+
+
+ASTBase *GrammerParser::parseWhileStmt()   {
+
+    LineNo line = TkParser->getCurLineNo();
+
+    // eat 'while'
+    getNextToken();
+
+    // eat '('
+    getNextToken();
+
+    ASTBase *expr = parseExpr();
+
+    // eat ')'
+    getNextToken();
+
+    WhileStmtAST *whileStmt = new WhileStmtAST(line, expr);
+
+    whileStmt->setStatement(parseStmt());
+
+    return whileStmt;
+}
+
+
+ASTBase *GrammerParser::parseReturnStmt()  {
+
+    ReturnStmtAST *returnStmt = new ReturnStmtAST(TkParser->getCurLineNo());
+
+    getNextToken();
+
+    if(TkParser->lookUp(1)[0] != ';') {
+        returnStmt->addChild(parseExpr());
+    }
+    
+    getNextToken();
+
+    return returnStmt;
+
+}
+
+
+ASTBase *GrammerParser::parseBreakStmt()   {
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    getNextToken();
+    return new BlockStmtAST(line);
+}
+
+
+ASTBase *GrammerParser::parseContinueStmt(){
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    getNextToken();
+    return new ContinueStmtAST(line);
+}
+
+
+ASTBase *GrammerParser::parseSwitchStmt()  {assert(false && "Unsupport attribute"); return nullptr;}
+ASTBase *GrammerParser::parseCaseStmt()    {assert(false && "Unsupport attribute"); return nullptr;}
+ASTBase *GrammerParser::parseDefault()     {assert(false && "Unsupport attribute"); return nullptr;}
+
+
+ASTBase *GrammerParser::parseExpr()        { return parseLogicExpr(); }
+
+ASTBase *GrammerParser::parseLogicExpr()   {
+    
+    static std::map<Token, Operator> LogicOpSet = { {tok_add, Add}, {tok_or, Or} }; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseBitExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(LogicOpSet.find(TkParser->lookUp(1)[0]) != LogicOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = LogicOpSet[(Token)CurTok];
+        ASTBase *rhs = parseBitExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+
+}
+
+
+ASTBase *GrammerParser::parseBitExpr()     {
+
+    static std::map<Token, Operator> BitOpSet = { {tok_bitxor, BitXor}, {tok_bitor, BitOr},
+        {tok_bitand, BitAnd}}; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseCmpExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(BitOpSet.find(TkParser->lookUp(1)[0]) != BitOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = BitOpSet[(Token)CurTok];
+        ASTBase *rhs = parseCmpExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+
+}
+
+
+ASTBase *GrammerParser::parseCmpExpr()     {
+
+    static std::map<Token, Operator> CmpOpSet = { {tok_gt, Gt}, {tok_ge, Ge},
+        {tok_lt, Lt}, {tok_le, Le}, {tok_eq, Eq}, {tok_neq, Neq}}; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseBitMoveExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(CmpOpSet.find(TkParser->lookUp(1)[0]) != CmpOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = CmpOpSet[(Token)CurTok];
+        ASTBase *rhs = parseBitMoveExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+}
+
+
+ASTBase *GrammerParser::parseBitMoveExpr() {
+
+    static std::map<Token, Operator> BitMoveOpSet = { {tok_lh, Lsft}, {tok_ulh, Lusft},
+        {tok_rh, Rsft}, {tok_urh, Rusft}}; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseAddExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(BitMoveOpSet.find(TkParser->lookUp(1)[0]) != BitMoveOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = BitMoveOpSet[(Token)CurTok];
+        ASTBase *rhs = parseAddExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+
+}
+
+
+ASTBase *GrammerParser::parseAddExpr()     { 
+
+    static std::map<Token, Operator> AddOpSet = { {tok_add, Add}, {tok_sub, Sub} }; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseMulExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(AddOpSet.find(TkParser->lookUp(1)[0]) != AddOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = AddOpSet[(Token)CurTok];
+        ASTBase *rhs = parseMulExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+
+}
+
+
+ASTBase *GrammerParser::parseMulExpr()     {
+
+    static std::map<Token, Operator> MulOpSet = { {tok_mul, Mul}, {tok_div, Div} }; 
+    LineNo line = TkParser->getCurLineNo();
+    ASTBase *lhs = parseUnaryExpr();
+    BinaryExprAST *binExpr = nullptr;
+    while(MulOpSet.find(TkParser->lookUp(1)[0]) != MulOpSet.end()) {
+        // eat op
+        getNextToken();
+        Operator op = MulOpSet[(Token)CurTok];
+        ASTBase *rhs = parseUnaryExpr();
+        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        line = TkParser->getCurLineNo();
+        lhs = binExpr;
+    }
+
+    if(binExpr)
+        return (ASTBase*)binExpr;
+    return lhs;
+
+}
+
+
+ASTBase *GrammerParser::parseUnaryExpr()   {
+    static std::map<Token, Operator> UnaryOpSet = { {tok_add, Add}, {tok_sub, Sub}, {tok_not, Not} };
+    LineNo line = TkParser->getCurLineNo();
+    if(UnaryOpSet.find(TkParser->lookUp(1)[0]) != UnaryOpSet.end()) {
+        getNextToken();
+        Operator op = UnaryOpSet[(Token)CurTok];
+        return new UnaryExprAST(line, op, parseUnaryExpr());
+    }
+    return parsePrimaryExpr();
+}
+
+
+ASTBase *GrammerParser::parsePrimaryExpr() {
+    
+    switch (TkParser->lookUp(1)[0]) {
+        case '{': {
+            getNextToken();
+            ASTBase *expr = parseExpr();
+            getNextToken();
+            return expr;
+        }
+        case tok_id: {
+            if(TkParser->lookUp(2)[1] == '(')
+                return parseCallExpr();
+            return parseIdRef();
+        }   
+        default: {
+            return parseConstExpr();
+        }
+    }
+ 
+}
+
+
+ASTBase *GrammerParser::parseIdRef()       {
+
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    IdRefAST *idRef = new IdRefAST(line, TkParser->getIdStr());
+
+    while(TkParser->lookUp(1)[0] == '[') {
+        getNextToken();
+        idRef->addChild(parseExpr());
+        getNextToken();
+    }
+
+    return idRef;
+
+}
+
+
+ASTBase *GrammerParser::parseCallExpr()    {
+
+    LineNo line = TkParser->getCurLineNo();
+    getNextToken();
+    CallExprAST *callExpr = new CallExprAST(line, TkParser->getIdStr());
+
+    // eat '('
+    getNextToken();
+
+    while(TkParser->lookUp(1)[0] != ')') {
+        callExpr->addChild(parseExpr());
+        if(TkParser->lookUp(1)[0] == ',')
+            getNextToken();
+        else
+            break;
+    }
+
+    // eat ')'
+    getNextToken();
+
+    return callExpr;
+}
+
+
+ASTBase *GrammerParser::parseConstExpr()   {
+    LineNo line = TkParser->getCurLineNo();
+    switch(TkParser->lookUp(1)[0]) {
+        case tok_literal: {
+            getNextToken();
+            return new LiteralExprAST(line, TkParser->getLiteral());
+        }
+        case tok_true: {
+            getNextToken();
+            return new NumberExprAST(line, true);
+        }
+        case tok_false:
+        {
+            getNextToken();
+            return new NumberExprAST(line, false);
+        }
+        case tok_inumber:{
+            getNextToken();
+            return new NumberExprAST(line, TkParser->getIntVal());
+        }
+        case tok_fnumber:{
+            getNextToken();
+            return new NumberExprAST(line, TkParser->getDoubleVal());
+        }
+        case tok_charlit:{
+            getNextToken();
+            return new NumberExprAST(line, (char)TkParser->getIntVal());
+        }
+        default: {
+            LOG_ERROR("error literal", line);
+        }
+    }
+}
 
 
 /// -----------------------------------------------------

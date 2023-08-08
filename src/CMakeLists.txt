@@ -14,6 +14,7 @@ link_directories(${LLVM_LIBRARY_DIRS})
 set(SRC_FILE 
     pre_analysis.cpp
     global_variable.cpp
+    ast_visitor.cpp
     ast.cpp
     parser.cpp
     test/token_parser_test.cpp 

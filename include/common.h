@@ -19,6 +19,8 @@ enum KAstId {
     InitializeId,       /* This type express var or struct object initialized expression    */
     ReturnStmtId,       /* This type express return statement                               */
     BreakStmtId,        /* This type express break statement                                */
+    BlockStmtId,        /* This type express block statement                                */
+    ContinueStmtId,     /* This type express continue statement                             */
 
     BinExprId,          /* This type express bin expr                                       */
     UnaryExprId,        /* This type express unary expr                                     */
@@ -87,5 +89,8 @@ enum Operator {
     BitAnd,             /* operator &   */
     BitXor,             /* operator ^   */
 };
+
+#define INSERT_ACCEPT void accept(AstVisitor &v) override; 
+
 
 #endif 
