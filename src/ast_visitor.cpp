@@ -11,7 +11,6 @@ void AstVisitor::visit(ASTBase *node) {
     postAction(node);
 }
 
-
 void AstVisitor::visit(ProgramAST *node) {
     preAction(node);
     TraversArray(node->getChilds());
@@ -51,6 +50,7 @@ void AstVisitor::visit(VarDefAST *node) {
 
 void AstVisitor::visit(BlockStmtAST *node) {
     preAction(node);
+    TraversArray(node->getChilds());
     postAction(node);
 }
 

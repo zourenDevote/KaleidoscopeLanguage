@@ -834,7 +834,7 @@ ASTBase *GrammerParser::parseReturnStmt()  {
     getNextToken();
 
     if(TkParser->lookUp(1)[0] != ';') {
-        returnStmt->addChild(parseExpr());
+        returnStmt->setRetExpr(dynamic_cast<ExprAST*>(parseExpr()));
     }
     
     getNextToken();
