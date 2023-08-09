@@ -28,6 +28,9 @@ class IdRefAST;
 class IdIndexedRefAST;
 class CallExprAST;
 
+#define TraversNode(X) X->accept(this);
+
+#define TraversArray(X) for(auto *node : X) { node->accept(this); }
 
 #ifndef ADD_VISITOR
 #define ADD_VISITOR(X) void visit(X *node);
@@ -63,8 +66,8 @@ public:
     ADD_VISITOR(CallExprAST)
 
 public:
-    virtual void preAction(ASTBase *node)   = 0;
-    virtual void postAction(ASTBase *node)  = 0;
+    virtual void preAction(ASTBase *node) {};
+    virtual void postAction(ASTBase *node) {};
 };
 
 

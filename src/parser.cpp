@@ -235,10 +235,12 @@ std::vector<Token> TokenParser::lookUp(unsigned n) {
     int SavedChar = LastChar;
     LineNo preNo = LineInfo;
     
-    int i = 0, tok = getToken();
-    while (i < n && tok != tok_eof) {
-        LookUpToks.push_back((Token)tok);
+    int i = 0, tok;
+    while (i < n) {
         tok = getToken();
+        LookUpToks.push_back((Token)tok);
+        if(tok == tok_eof)
+            break;
         i++;
     }
     
@@ -589,7 +591,7 @@ ASTBase *GrammerParser::parseFuncDef()     {
         funcDef->setRetType(parseTypeDecl());
     }
 
-    funcDef->addChild(parseBlockStmt());
+    funcDef->setBlockStmt(dynamic_cast<BlockStmtAST*>(parseBlockStmt()));
 
     return funcDef;
 }
@@ -1020,7 +1022,7 @@ ASTBase *GrammerParser::parseUnaryExpr()   {
 ASTBase *GrammerParser::parsePrimaryExpr() {
     
     switch (TkParser->lookUp(1)[0]) {
-        case '{': {
+        case '(': {
             getNextToken();
             ASTBase *expr = parseExpr();
             getNextToken();
