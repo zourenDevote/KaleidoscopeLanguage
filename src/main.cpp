@@ -2,6 +2,8 @@
 
 #include "global_variable.h"
 #include "pre_analysis.h"
+#include "ast_visitor.h"
+#include "ast_dumper.h"
 #include "cxxopts.hpp"
 #include "parser.h"
 
@@ -112,6 +114,12 @@ int main(int argc, char *argv[]) {
     GrammerParser *parser = new GrammerParser(ProgramList[0]);
     parser->generateSrcToAst();
 
-    /// 
+
+    if(PrintIR) {
+        DumpVisitor v;
+        v.visit(parser->getProg());
+        return 0;
+    }
+
     return 0;
 }

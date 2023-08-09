@@ -15,6 +15,7 @@ set(SRC_FILE
     pre_analysis.cpp
     global_variable.cpp
     ast_visitor.cpp
+    ast_dumper.cpp
     ast.cpp
     parser.cpp
     test/token_parser_test.cpp 

@@ -87,6 +87,9 @@ private:
     ASTBase *parseIdRef();
     ASTBase *parseCallExpr();
     ASTBase *parseConstExpr();
+
+public:
+    ProgramAST *getProg() { return ProgAst; }
 };
 /// -----------------------------------------------------
 
