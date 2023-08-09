@@ -2,12 +2,12 @@
 #ifndef KALEIDOSCOPE_TOKEN
 #define KALEIDOSCOPE_TOKEN
 
-enum Token {
-  tok_eof = 1,             // --> 终结符 EOF
+enum Token: unsigned {
+  tok_eof = 256,           // --> 终结符 EOF
 
   // commands
-  tok_def = 2,             // --> keyword def
-  tok_extern = 3,          // --> keyword extern
+  tok_def,                 // --> keyword def
+  tok_extern,              // --> keyword extern
   tok_if,                  // --> keyword if
   tok_for,                 // --> keyword for
   tok_while,               // --> keyword while

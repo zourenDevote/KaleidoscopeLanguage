@@ -2,93 +2,134 @@
 #include "ast_visitor.h"
 #include "ast.h"
 
-#define TraversNode(X) X->accept(*this);
+#define TraversNode(X) if(X) { X->accept(*this); }
 
 #define TraversArray(X) for(auto node : X) { node->accept(*this); }
 
 void AstVisitor::visit(ASTBase *node) {
-    TraversArray(node->getChilds());
+    preAction(node);
+    postAction(node);
 }
 
 
 void AstVisitor::visit(ProgramAST *node) {
-    visit((ASTBase*)node);
+    preAction(node);
+    TraversArray(node->getChilds());
+    postAction(node);
 }
 
 void AstVisitor::visit(ParamAST *node) {
-    visit((ASTBase*)node);
+    preAction(node);
+    postAction(node);
 }
 
 void AstVisitor::visit(FuncAST *node) {
+    preAction(node);
     TraversArray(node->getParams());
-    visit((ASTBase*)node);
+    TraversNode(node->getBlockStmt());
+    postAction(node);
 }
 
 void AstVisitor::visit(InitializedAST *node) {
-
+    preAction(node);
+    TraversNode(node->getInitExpr());
+    TraversNode(node->getExpr());
+    postAction(node);
 }
 
 void AstVisitor::visit(StructDefAST *node) {
-}
+    preAction(node);
+    postAction(node);
+}   
 
 void AstVisitor::visit(VarDefAST *node) {
-
+    preAction(node);
+    TraversNode(node->getStructDefAST());
+    TraversNode(node->getInitExpr());
+    postAction(node);
 }
 
 void AstVisitor::visit(BlockStmtAST *node) {
-    
+    preAction(node);
+    postAction(node);
 }
 
 void AstVisitor::visit(ReturnStmtAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getRetExpr());
+    postAction(node);
 }
 
 void AstVisitor::visit(BreakStmtAST *node) {
-    
+    preAction(node);
+    postAction(node);    
 }
 
 void AstVisitor::visit(ContinueStmtAST *node) {
-    
+    preAction(node);
+    postAction(node);
 }
 
 void AstVisitor::visit(ForStmtAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getExpr1());
+    TraversNode(node->getExpr2());
+    TraversNode(node->getExpr3());
+    TraversNode(node->getStatement());
+    postAction(node);
 }
 
 void AstVisitor::visit(WhileStmtAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getCond());
+    TraversNode(node->getStatement());
+    postAction(node);
 }
 
 void AstVisitor::visit(IfStmtAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getCond());
+    TraversNode(node->getStatement());
+    TraversNode(node->getElse());
+    postAction(node);
 }
 
 void AstVisitor::visit(BinaryExprAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getLhs());
+    TraversNode(node->getRhs());
+    postAction(node);
 }
 
 void AstVisitor::visit(UnaryExprAST *node) {
-    
+    preAction(node);
+    TraversNode(node->getUnaryExpr());
+    postAction(node);
 }
 
 void AstVisitor::visit(LiteralExprAST *node) {
-    
+    preAction(node); 
+    postAction(node);
 }
 
 void AstVisitor::visit(NumberExprAST *node) {
-    
+    preAction(node); 
+    postAction(node);   
 }
 
 void AstVisitor::visit(IdRefAST *node) {
-    
+    preAction(node); 
+    postAction(node);
 }
 
 void AstVisitor::visit(IdIndexedRefAST *node) {
-    
+    preAction(node); 
+    postAction(node);
 }
 
 void AstVisitor::visit(CallExprAST *node) {
-    
+    preAction(node); 
+    postAction(node);
 }
 
 
@@ -105,6 +146,7 @@ ACCEPT(StructDefAST)
 ACCEPT(VarDefAST)
 ACCEPT(BlockStmtAST)
 ACCEPT(ReturnStmtAST)
+ACCEPT(BreakStmtAST)
 ACCEPT(ContinueStmtAST)
 ACCEPT(ForStmtAST)
 ACCEPT(WhileStmtAST)

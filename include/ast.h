@@ -21,6 +21,7 @@ struct LineNo {
 
 class ProgramAST;
 class AstVisitor;
+class BlockStmtAST;
 class ExprAST;
 
 
@@ -162,7 +163,7 @@ private:
     std::string FuncName;                    // 函数名
     std::vector<ParamAST *> FuncParams;      // 函数参数列表
     KType RetType;                           // 返回值类型
-
+    BlockStmtAST *BlockStmt;
 public:
     INSERT_ACCEPT
 
@@ -174,7 +175,9 @@ public:
     void setFuncName(const std::string& name) { FuncName = name; }
     void setRetType(KType type) { RetType = type; }
     void addFuncParam(ParamAST *param) { FuncParams.push_back(param); }
+    void setBlockStmt(BlockStmtAST *stmt) { BlockStmt = stmt; }
 
+    BlockStmtAST *getBlockStmt() { return BlockStmt; }
     Function *getLLVMFunction() { return LLVMFunc; }
     const std::string& getFuncName() { return FuncName; }
     const std::vector<ParamAST *>& getParams() { return FuncParams; }
@@ -209,6 +212,11 @@ public:
 
     KAstId getClassId() override { return InitializeId; }
 
+    void setInitExpr(InitializedAST *next) { Next = next; }
+    void setExpr(ExprAST *expr) { InitExpr = expr; }
+
+    InitializedAST *getInitExpr() { return Next; }
+    ExprAST *getExpr()  { return InitExpr; }
 private:
     ExprAST *InitExpr;
     InitializedAST *Next;
@@ -288,6 +296,12 @@ public:
     INSERT_ACCEPT
 
     KAstId getClassId() override { return ReturnStmtId; }
+
+public:
+    void setRetExpr(ExprAST *expr) { RetExpr = expr; }
+    ExprAST *getRetExpr() { return RetExpr; }
+private:
+    ExprAST *RetExpr = {nullptr};
 };
 
 /// ------------------------------------------------------------------------
