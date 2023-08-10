@@ -2,7 +2,6 @@
 
 #include "global_variable.h"
 #include "pre_analysis.h"
-#include "ast_visitor.h"
 #include "ast_dumper.h"
 #include "cxxopts.hpp"
 #include "parser.h"
@@ -59,7 +58,7 @@ int parseCmdArgs(int argc, char *argv[]) {
             return 1;
         }
 
-        for(auto file : result["input"].as<std::vector<std::string>>()) {
+        for(auto &file : result["input"].as<std::vector<std::string>>()) {
             InputFileList.push_back(file);
         }
 
@@ -111,7 +110,7 @@ int main(int argc, char *argv[]) {
     }
     
     /// @fixme ast generate test
-    GrammerParser *parser = new GrammerParser(ProgramList[0]);
+    auto parser = new GrammerParser(ProgramList[0]);
     parser->generateSrcToAst();
 
 

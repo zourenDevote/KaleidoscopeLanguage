@@ -8,20 +8,23 @@
 /// ast node used in ASTBase, Each type of ast node has its own unique id.
 /// ------------------------------------------------------------------------
 enum KAstId {
-    ProgramID,          /* This type express program                                        */
+    ProgramId,          /* This type express program                                        */
     VarDefId,           /* This type express var define and var declare                     */
     FuncId,             /* This type express function define and function declare           */
     FuncParamId,        /* This type express function param define                          */
+    StmtId,             /* This type express base statement of statement                    */
+    ExprStmtId,         /* This type express expr statement of expr statement               */
     SwitchId,           /* This type express switch statement                               */
     IfStmtId,           /* This type express if statement                                   */
     ForStmtId,          /* This type express for statement                                  */
-    WhileStmtId,        /* This type epxress while statement                                */
+    WhileStmtId,        /* This type express while statement                                */
     InitializeId,       /* This type express var or struct object initialized expression    */
     ReturnStmtId,       /* This type express return statement                               */
     BreakStmtId,        /* This type express break statement                                */
     BlockStmtId,        /* This type express block statement                                */
     ContinueStmtId,     /* This type express continue statement                             */
 
+    ExprId,             /* This type express base expr of expression                        */
     BinExprId,          /* This type express bin expr                                       */
     UnaryExprId,        /* This type express unary expr                                     */
     LiteralId,          /* This type express literal                                        */
@@ -91,6 +94,6 @@ enum Operator {
 };
 
 #define INSERT_ACCEPT void accept(AstVisitor &v) override; 
-
+#define INSERT_ENUM(X) KAstId getClassId() override { return X; }
 
 #endif 

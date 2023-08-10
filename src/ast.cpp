@@ -7,15 +7,6 @@ ASTBase::ASTBase(const LineNo& lineNo) : LineMsg(lineNo),
                                          Parent(nullptr), 
                                          Program(nullptr){}
                                         
-void ASTBase::addChild(ASTBase *child) {
-    this->Childs.push_back(child);
-}
-
-void ASTBase::addChilds(const std::vector<ASTBase*>& childs) {
-    for(auto child : childs) {
-        addChild(child);
-    }
-}
 
 void ASTBase::setParent(ASTBase *parent) {
     this->Parent = parent;
@@ -29,49 +20,6 @@ void ASTBase::setProgram(ProgramAST *prog) {
     this->Program = prog;
 }
 
-bool ASTBase::childEmpty() {
-    return this->Childs.empty();
-}
-
-ASTBase::NodeIter ASTBase::begin() {
-    return this->Childs.begin();
-}
-
-ASTBase::NodeIter ASTBase::end() {
-    return this->Childs.end();
-}
-
-ASTBase::RNodeIter ASTBase::rbegin() {
-    return this->Childs.rbegin();
-}
-
-ASTBase::RNodeIter ASTBase::rend() {
-    return this->Childs.rend();
-}
-
-ASTBase::CNodeIter ASTBase::cbegin() {
-    return this->Childs.cbegin();
-}
-
-ASTBase::CNodeIter ASTBase::cend() {
-    return this->Childs.cend();
-}
-
-ASTBase::CRNodeIter ASTBase::crbegin() {
-    return this->Childs.crbegin();
-}
-
-ASTBase::CRNodeIter ASTBase::crend() {
-    return this->Childs.crend();
-}
-
-
-ASTBase *ASTBase::getChild(unsigned int index) {
-    if(Childs.size() <= index) {
-        return nullptr;
-    }
-    return Childs[index];
-}
 
 /// ----------------------------------------------------------
 
@@ -94,12 +42,13 @@ ParamAST::ParamAST(const LineNo& lineNo, const std::string& name, KType type) : 
 FuncAST::FuncAST(const LineNo& lineNo, const std::string& funcName, KType retType) : ASTBase(lineNo) {
     this->FuncName = funcName;
     this->RetType = retType;
+    this->BlockStmt = nullptr;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// InitializedAST define code
-InitializedAST::InitializedAST(const LineNo& lineNo) : ASTBase(lineNo) {}
+InitializedAST::InitializedAST(const LineNo& lineNo) : ExprAST(lineNo) {}
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
@@ -108,8 +57,20 @@ StructDefAST::StructDefAST(const LineNo& lineNo) : ASTBase(lineNo) {}
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
+/// StatementAST define code
+StatementAST::StatementAST(const LineNo& line) : ASTBase(line) {}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
+/// ExprStmtAST define code
+ExprStmtAST::ExprStmtAST(const LineNo& lineNo, ExprAST *expr) : StatementAST(lineNo) {
+    Expr = expr;
+}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
 /// VarDefAST define code
-VarDefAST::VarDefAST(const LineNo& lineNo, const std::string& name, KType type) : ASTBase(lineNo) {
+VarDefAST::VarDefAST(const LineNo& lineNo, const std::string& name, KType type) : StatementAST(lineNo) {
     this->VarName = name;
     this->VarType = type;
 }   
@@ -117,75 +78,85 @@ VarDefAST::VarDefAST(const LineNo& lineNo, const std::string& name, KType type) 
 
 /// ----------------------------------------------------------
 /// BlockStmtAST define code
-BlockStmtAST::BlockStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+BlockStmtAST::BlockStmtAST(const LineNo& lineNo) : StatementAST(lineNo){
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// ReturnStmtAST define code
-ReturnStmtAST::ReturnStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+ReturnStmtAST::ReturnStmtAST(const LineNo& lineNo) : StatementAST(lineNo){
+    RetExpr = nullptr;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// BreakStmtAST define code
-BreakStmtAST::BreakStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+BreakStmtAST::BreakStmtAST(const LineNo& lineNo) : StatementAST(lineNo){
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// ContinueStmtAST define code
-ContinueStmtAST::ContinueStmtAST(const LineNo& lineNo) : ASTBase(lineNo){
+ContinueStmtAST::ContinueStmtAST(const LineNo& lineNo) : StatementAST(lineNo){
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// ForStmtAST define code
-ForStmtAST::ForStmtAST(const LineNo& lineNo, ASTBase *expr1, ASTBase *expr2, ASTBase *expr3) : ASTBase(lineNo) {
+ForStmtAST::ForStmtAST(const LineNo& lineNo, ExprAST *expr1, ExprAST *expr2, ExprAST *expr3) : StatementAST(lineNo) {
     this->Expr1 = expr1;
     this->Expr2 = expr2;
     this->Expr3 = expr3;
+    this->Stmt = nullptr;
 }
 
-ForStmtAST::ForStmtAST(const LineNo& lineNo) : ASTBase(lineNo) {
+ForStmtAST::ForStmtAST(const LineNo& lineNo) : StatementAST(lineNo) {
     this->Expr1 = nullptr;
     this->Expr2 = nullptr;
     this->Expr3 = nullptr;
+    this->Stmt = nullptr;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// WhileStmtAST define code
-WhileStmtAST::WhileStmtAST(const LineNo& lineNo, ASTBase *cond) : ASTBase(lineNo) {
+WhileStmtAST::WhileStmtAST(const LineNo& lineNo, ExprAST *cond) : StatementAST(lineNo) {
     this->Cond = cond;
+    this->Stmt = nullptr;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// IfStmtAST define code
-IfStmtAST::IfStmtAST(const LineNo& lineNo, ASTBase *cond) : ASTBase(lineNo) {
+IfStmtAST::IfStmtAST(const LineNo& lineNo, ExprAST *cond) : StatementAST(lineNo) {
     this->Cond = cond;
+    this->Stmt = nullptr;
     this->Else = nullptr;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
+/// ExprAST define code
+ExprAST::ExprAST(const LineNo& line) : ASTBase(line) {}
+/// ----------------------------------------------------------
+
+/// ----------------------------------------------------------
 /// BinaryExprAST define code
-BinaryExprAST::BinaryExprAST(const LineNo& lineNo, Operator op, ASTBase *lhs, ASTBase *rhs) : ExprAST(lineNo) {
+BinaryExprAST::BinaryExprAST(const LineNo& lineNo, Operator op, ExprAST *lhs, ExprAST *rhs) : ExprAST(lineNo) {
     this->Op = op;
     assert(lhs && "Lhs can not be null!");
-    addChild(lhs);
+    this->Lhs = lhs;
     assert(rhs && "Rhs can not be null!");
-    addChild(rhs);
+    this->Rhs = rhs;
 }
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------
 /// UnaryExprAST define code
-UnaryExprAST::UnaryExprAST(const LineNo& lineNo, Operator op, ASTBase *expr) : ExprAST(lineNo) {
+UnaryExprAST::UnaryExprAST(const LineNo& lineNo, Operator op, ExprAST *expr) : ExprAST(lineNo) {
     this->Op = op;
     assert(expr && "Expr in unary expr can not be null!");
-    addChild(expr);
+    this->Expr =  expr;
 }
 /// ----------------------------------------------------------
 
@@ -254,7 +225,9 @@ Value *IdIndexedRefAST::getLLVMValue() {
 
 /// ----------------------------------------------------------
 /// CallExprAST define code
-CallExprAST::CallExprAST(const LineNo& lineNo, const std::string& name) : ExprAST(lineNo), FuncName(name){}
+CallExprAST::CallExprAST(const LineNo& lineNo, const std::string& name) : ExprAST(lineNo), FuncName(name){
+    TheCallFunction = nullptr;
+}
 
 llvm::Function *CallExprAST::getLLVMFunction() {
     if(TheCallFunction) {
