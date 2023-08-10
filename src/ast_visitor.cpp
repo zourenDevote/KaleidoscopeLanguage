@@ -13,7 +13,7 @@ void AstVisitor::visit(ASTBase *node) {
 
 void AstVisitor::visit(ProgramAST *node) {
     preAction(node);
-    TraversArray(node->getChilds());
+    TraversArray(node->getCompElems());
     postAction(node);
 }
 
@@ -50,7 +50,7 @@ void AstVisitor::visit(VarDefAST *node) {
 
 void AstVisitor::visit(BlockStmtAST *node) {
     preAction(node);
-    TraversArray(node->getChilds());
+    TraversArray(node->getStmts());
     postAction(node);
 }
 
@@ -132,7 +132,11 @@ void AstVisitor::visit(CallExprAST *node) {
     postAction(node);
 }
 
-
+void AstVisitor::visit(ExprStmtAST *node) {
+    preAction(node);
+    TraversNode(node->getExpr());
+    postAction(node);
+}
 
 //////////////////////////// accept 实现 //////////////////////////
 #ifndef ACCEPT
@@ -158,6 +162,7 @@ ACCEPT(NumberExprAST)
 ACCEPT(IdRefAST)
 ACCEPT(IdIndexedRefAST)
 ACCEPT(CallExprAST)
+ACCEPT(ExprStmtAST)
 
 
 #undef ACCEPT
