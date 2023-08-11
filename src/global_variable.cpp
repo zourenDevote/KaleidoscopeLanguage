@@ -1,7 +1,6 @@
 
 #include "global_variable.h"
 
-
 /// T ==> The input source file list
 std::vector<std::string> InputFileList;
 
@@ -16,6 +15,12 @@ bool PrintIR = false;
 
 /// T ==> The print ast flag
 bool PrintAST = false;
+
+/// T ==> The dump ir to .ll flag
+bool DumpIRToLL = false;
+
+/// T ==> The flag of compile and run executable file
+bool CompileAndRun = false;
 
 /// T ==> Use multi thread compile
 bool UseMultThreadCompile = false;

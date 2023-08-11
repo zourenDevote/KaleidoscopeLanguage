@@ -3,7 +3,6 @@
 #include <string>
 #include "ast.h"
 
-
 /// T ==> The input source file list
 extern std::vector<std::string> InputFileList;
 
@@ -18,6 +17,12 @@ extern bool PrintIR;
 
 /// T ==> The print ast flag
 extern bool PrintAST;
+
+/// T ==> The dump ir to .ll flag
+extern bool DumpIRToLL;
+
+/// T ==> The flag of compile and run executable file
+extern bool CompileAndRun;
 
 /// T ==> Use multi thread compile
 extern bool UseMultThreadCompile;

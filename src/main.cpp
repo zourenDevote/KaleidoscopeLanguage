@@ -40,7 +40,10 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("print-ast", "Print ast of source file", cxxopts::value<bool>()->default_value("false"))
             ("o, output", "Output file name", cxxopts::value<std::string>()->default_value("a.out"))
             ("h, help", "Print help")
-            ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"));
+            ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"))
+            ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
+            ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"))
+            ;       /// 其它关于回归测试的选项
 
 #ifdef __CTEST_ENABLE__
         options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"));
@@ -68,6 +71,14 @@ int parseCmdArgs(int argc, char *argv[]) {
 
         if(result["print-ir"].as<bool>()) {
             PrintIR = true;
+        }
+
+        if(result["serialize-ir"].as<bool>()) {
+            DumpIRToLL = true;
+        }
+
+        if(result["run"].as<bool>()) {
+            CompileAndRun = true;
         }
 
         ThreadCount = result["j"].as<int>();
@@ -110,15 +121,42 @@ int main(int argc, char *argv[]) {
     }
     
     /// @fixme ast generate test
-    auto parser = new GrammerParser(ProgramList[0]);
-    parser->generateSrcToAst();
-
-
-    if(PrintIR) {
-        DumpVisitor v;
-        v.visit(parser->getProg());
-        return 0;
+    for(auto *prog : ProgramList) {
+        switch (prog->getCompiledFlag()) {
+            case ProgramAST::Success: {
+                break;
+            }
+            case ProgramAST::Failed: {
+                std::cerr << "Exit with error!" << std::endl;
+                return 1;
+            }
+            case ProgramAST::NotCompiled: {
+                auto parser = GrammarParser::getOrCreateGrammarParserByProg(prog);
+                parser->generateSrcToAst();
+            }
+        }
     }
 
+    /// print ast
+    if(PrintAST) {
+        DumpVisitor v;
+        for(auto *prog : ProgramList) {
+            v.visit(prog);
+        }
+    }
+
+    /// generate ir
+
+    /// print ir
+    if(PrintIR) {
+
+    }
+
+    /// compile ir to executable file
+
+    /// run this case?
+    if(CompileAndRun) {
+
+    }
     return 0;
 }
