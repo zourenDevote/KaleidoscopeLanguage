@@ -5,6 +5,8 @@
  * @overview: This file is the visitor defined to visit the ast node.
 */
 
+#ifndef KALEIDOSCOPE_AST_VISITOR
+#define KALEIDOSCOPE_AST_VISITOR
 
 class ASTBase;
 class ProgramAST;
@@ -27,6 +29,7 @@ class NumberExprAST;
 class IdRefAST;
 class IdIndexedRefAST;
 class CallExprAST;
+class ExprStmtAST;
 
 #define TraversNode(X) X->accept(this);
 
@@ -64,6 +67,7 @@ public:
     ADD_VISITOR(IdRefAST)
     ADD_VISITOR(IdIndexedRefAST)
     ADD_VISITOR(CallExprAST)
+    ADD_VISITOR(ExprStmtAST)
 
 public:
     virtual void preAction(ASTBase *node) {};
@@ -74,6 +78,7 @@ public:
 #undef ADD_VISITOR
 #endif
 
+#endif
 
 
 
