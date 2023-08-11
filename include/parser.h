@@ -2,6 +2,7 @@
 #ifndef KALEIDOSCOPE_PARSER
 #define KALEIDOSCOPE_PARSER
 
+#include <unordered_map>
 #include "token.h"
 #include "ast.h"
 
@@ -43,13 +44,13 @@ public:
 /// -----------------------------------------------------
 /// @brief 
 /// -----------------------------------------------------
-class GrammerParser {
+class GrammarParser {
 private:
     ProgramAST *ProgAst;
     TokenParser *TkParser;
     Token CurTok;
 public:
-    explicit GrammerParser(ProgramAST *prog);
+    explicit GrammarParser(ProgramAST *prog);
     void generateSrcToAst();
 private:
     void getNextToken();
@@ -90,6 +91,11 @@ private:
 
 public:
     ProgramAST *getProg() { return ProgAst; }
+
+private:
+    static std::unordered_map<ProgramAST *, GrammarParser *> ProgToGrammarParserMap;
+public:
+    static GrammarParser *getOrCreateGrammarParserByProg(ProgramAST *prog);
 };
 /// -----------------------------------------------------
 

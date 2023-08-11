@@ -67,14 +67,15 @@ public:
 /// and compile statue.
 /// ------------------------------------------------------------------------
 class ProgramAST : public ASTBase {
-private:
+public:
     /// @brief this enum type express program compiled statue
     enum CompiledFlag {
         Success,
         Failed,
         NotCompiled,
-        Compiling,      // 这个编译标志为利用多线程编译的flag
     };
+
+private:
     std::vector<ProgramAST*> DependentProg;             // 依赖项
     CompiledFlag             CompFlag{NotCompiled};     // 处理状态
     std::vector<ASTBase*>    ProgramElems;              //
