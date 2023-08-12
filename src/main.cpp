@@ -104,6 +104,9 @@ int parseCmdArgs(int argc, char *argv[]) {
 
 
 int main(int argc, char *argv[]) {
+
+
+
     /// parse command line option
     if(parseCmdArgs(argc, argv)) {
         std::cerr << "Exit with error!" << std::endl;
