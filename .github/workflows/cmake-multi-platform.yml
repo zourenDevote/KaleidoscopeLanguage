@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: action/checkout@v2
+        uses: action/checkout@v3
 
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: action/checkout@v2
+        uses: action/checkout@v3
 
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
