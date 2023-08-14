@@ -103,7 +103,9 @@ caseStmt : CASE expr ':' stmt
 
 default : DEFAULT ':' stmt
 
-expr : logicExpr
+expr : assignExpr
+
+assignExpr : idRef '=' logicExpr
 
 logicExpr : bitExpr ('&&' | '||') bitExpr
 
@@ -137,7 +139,7 @@ constExpr : LITERAL
 ```
 
 ## Test
-
+[Regression Testing Documentation](./doc/AboutTest.md)
 ## Compilation Process
 
 ![compilation process](./doc/pic1.png)

@@ -42,11 +42,13 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("h, help", "Print help")
             ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"))
             ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
-            ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"))
-            ;       /// 其它关于回归测试的选项
+            ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"));
 
 #ifdef __CTEST_ENABLE__
-        options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"));
+        options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"))
+        ("only-print-ast", "Only print ast", cxxopts::value<bool>()->default_value("false"))
+        ("only-print-ir", "Only print ir", cxxopts::value<bool>()->default_value("false"))
+        ("only-parse", "Only parse", cxxopts::value<bool>()->default_value("false"));
 #endif
     
         auto result = options.parse(argc, argv);
@@ -65,21 +67,11 @@ int parseCmdArgs(int argc, char *argv[]) {
             InputFileList.push_back(file);
         }
 
-        if(result["print-ast"].as<bool>()) {
-            PrintAST = true;
-        }
+        PrintAST = result["print-ast"].as<bool>();
+        PrintIR = result["print-ir"].as<bool>();
+        DumpIRToLL = result["serialize-ir"].as<bool>();
+        CompileAndRun = result["run"].as<bool>();
 
-        if(result["print-ir"].as<bool>()) {
-            PrintIR = true;
-        }
-
-        if(result["serialize-ir"].as<bool>()) {
-            DumpIRToLL = true;
-        }
-
-        if(result["run"].as<bool>()) {
-            CompileAndRun = true;
-        }
 
         ThreadCount = result["j"].as<int>();
         if(ThreadCount > 1) {
@@ -91,6 +83,9 @@ int parseCmdArgs(int argc, char *argv[]) {
 
 #ifdef __CTEST_ENABLE__
         TokenParserTestFlag = result["token_test"].as<bool>();
+        OnlyPrintIR = result["only-print-ir"].as<bool>();
+        OnlyPrintAST = result["only-print-ast"].as<bool>();
+        OnlyParse = result["only-print-ast"].as<bool>();
 #endif
 
         return 0;
@@ -104,8 +99,6 @@ int parseCmdArgs(int argc, char *argv[]) {
 
 
 int main(int argc, char *argv[]) {
-
-
 
     /// parse command line option
     if(parseCmdArgs(argc, argv)) {
@@ -140,6 +133,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
+#ifdef __CTEST_ENABLE__
+    if(OnlyParse) {
+        return 0;
+    }
+#endif
+
     /// print ast
     if(PrintAST) {
         DumpVisitor v;
@@ -148,12 +147,29 @@ int main(int argc, char *argv[]) {
         }
     }
 
+#ifdef __CTEST_ENABLE__
+    if (OnlyPrintAST) {
+        DumpVisitor v;
+        for(auto *prog : ProgramList) {
+            v.visit(prog);
+        }
+        return 0;
+    }
+#endif
+
     /// generate ir
 
     /// print ir
     if(PrintIR) {
 
     }
+
+#ifdef __CTEST_ENABLE__
+    if (OnlyPrintIR) {
+
+        return 0;
+    }
+#endif
 
     /// compile ir to executable file
 

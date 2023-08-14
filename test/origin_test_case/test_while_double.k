@@ -1,8 +1,6 @@
 
-# print array use for
-
 extern getdouble() : double;
-extern putdouble(double v);
+extern putdouble(double d);
 extern space();
 extern newline();
 
@@ -10,17 +8,20 @@ double globalArray[10];
 
 def main() : int {
     int i;
-    for i = 0 , i < 10 , 1 in {
+    i = 0;
+    while (i < 10) {
         globalArray[i] = getdouble();
+        i = i + 1;
     }
 
-    for i = 0 , i < 10 , 1 in {
+    i = 9;
+    while (i >= 0) {
         putdouble(globalArray[i]);
         space();
+        i = i - 1;
     }
 
     newline();
 
     return 0;
 }
-

@@ -9,7 +9,11 @@
 /// ------------------------------------------------------------------------
 enum KAstId {
     ProgramId,          /* This type express program                                        */
-    VarDefId,           /* This type express var define and var declare                     */
+    DataDeclId,         /* This type express var define and var declare                     */
+    VariableId,         /* This type express variable in kaleidoscope                       */
+    IdDefId,            /* This type express id base class in kaleidoscope                  */
+    DataTypeId,         /* This type expression data type in kaleidoscope                   */
+    TypeRefId,          /* This type expression data ref in kaleidoscope                    */
     FuncId,             /* This type express function define and function declare           */
     FuncParamId,        /* This type express function param define                          */
     StmtId,             /* This type express base statement of statement                    */

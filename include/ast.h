@@ -25,6 +25,8 @@ class AstVisitor;
 class BlockStmtAST;
 class StatementAST;
 class ExprAST;
+class InitializedAST;
+class VariableAST;
 
 
 /// ------------------------------------------------------------------------
@@ -44,7 +46,7 @@ public:
 
 public:
     ASTBase() = default;
-    ASTBase(const LineNo&);
+    ASTBase(const LineNo&, ASTBase *);
 
    void setParent(ASTBase *parent);
    void setLineNo(const LineNo&);
@@ -85,7 +87,7 @@ public:
 
 public:
     ProgramAST() = default;
-    explicit ProgramAST(const LineNo&);
+    explicit ProgramAST(const LineNo&, ASTBase *parent = nullptr);
 
     /// @brief 添加program的依赖项
     /// @param prog 
@@ -115,34 +117,44 @@ public:
 /// ------------------------------------------------------------------------
 class ParamAST : public ASTBase {
 private:
-    const std::string Name;
-    KType             Type;
-    std::vector<int>  ArrayDims;
-    int               ArrayDim;
-    bool              IsConst;
-    Value            *Val;
+    VariableAST *Id;
 
 public:
     INSERT_ENUM(FuncParamId)
     static bool canCastTo(KAstId id) { return (id == FuncParamId); }
 
 public:
-    explicit ParamAST(const LineNo&, const std::string&, KType);
+    explicit ParamAST(const LineNo&, ASTBase*, VariableAST *);
 
-    void addArrayDim    (int dim)       { ArrayDims.push_back(dim); }
-    void arrayDimAdd    ()              { ArrayDim++; }
-    void setLLVMValue   (Value *v)      { Val = v; }
-    void setIsConst     (bool isConst)  { IsConst = isConst; }
+    void setId(VariableAST *id) { Id = id; }
 
-    const std::string       &getParamName() { return Name; }
-    KType                    getParamType() { return Type; }
-    Value                   *getLLVMValue() { return Val; }
-    const std::vector<int>  &getArrayDims() { return ArrayDims; }
-    int                      getArrayDim () { return ArrayDim; }
-    bool                     isConst     () { return IsConst; }
+    VariableAST *getId() { return Id; }
 
 public:
     INSERT_ACCEPT
+};
+
+/// ------------------------------------------------------------------------
+/// @brief: DataTypeAST ast express the data type of kaleidoscope language
+/// ------------------------------------------------------------------------
+class DataTypeAST : public ASTBase {
+public:
+    DataTypeAST() = default;
+    DataTypeAST(const LineNo&, ASTBase *, KType);
+
+public:
+    INSERT_ENUM(DataTypeId)
+    static bool canCastTo(KAstId id) { return (id == DataTypeId); }
+
+public:
+    void setDataType(KType type) { DataType = type; }
+    KType getDataType() { return DataType; }
+
+private:
+    KType DataType;
+
+public:
+    INSERT_ACCEPT;
 };
 
 
@@ -155,7 +167,7 @@ private:
     Function                *LLVMFunc;        //
     std::string              FuncName;        // 函数名
     std::vector<ParamAST *>  FuncParams;      // 函数参数列表
-    KType                    RetType;         // 返回值类型
+    DataTypeAST             *RetType;         // 返回值类型
     BlockStmtAST            *BlockStmt;
 
 public:
@@ -163,11 +175,11 @@ public:
     static bool canCastTo(KAstId id) { return (id == FuncId); }
 
 public:
-    explicit FuncAST(const LineNo&, const std::string&, KType);
+    explicit FuncAST(const LineNo&, ASTBase*, const std::string&);
 
     void setLLVMFunction(Function *func)            { LLVMFunc = func; }
     void setFuncName    (const std::string& name)   { FuncName = name; }
-    void setRetType     (KType type)                { RetType = type; }
+    void setRetType     (DataTypeAST *type)         { RetType = type; }
     void addFuncParam   (ParamAST *param)           { FuncParams.push_back(param); }
     void setBlockStmt   (BlockStmtAST *stmt)        { BlockStmt = stmt; }
 
@@ -175,7 +187,7 @@ public:
     Function                        *getLLVMFunction() { return LLVMFunc; }
     const std::string               &getFuncName    () { return FuncName; }
     const std::vector<ParamAST *>   &getParams      () { return FuncParams; }
-    KType                            getRetType     () { return RetType; }
+    DataTypeAST                     *getRetType     () { return RetType; }
 
     /// @brief 参数列表的迭代器
     /// @return 
@@ -201,7 +213,7 @@ public:
 /// ------------------------------------------------------------------------
 class StructDefAST : public ASTBase{
 public:
-    explicit StructDefAST(const LineNo&);
+    explicit StructDefAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(StructId)
@@ -217,7 +229,7 @@ public:
 class StatementAST : public ASTBase {
 public:
     StatementAST() = default;
-    explicit StatementAST(const LineNo&);
+    explicit StatementAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(StmtId)
@@ -232,7 +244,7 @@ private:
     ExprAST *Expr;
 public:
     ExprStmtAST() = default;
-    explicit ExprStmtAST(const LineNo&, ExprAST *expr);
+    explicit ExprStmtAST(const LineNo&, ASTBase*, ExprAST *expr);
 
 public:
     void setExpr(ExprAST *expr) { Expr = expr; }
@@ -248,38 +260,105 @@ public:
 
 
 /// ------------------------------------------------------------------------
+/// @brief: IdDefAST ast express the id define in kaleidoscope language, such
+///         as variable define, type ref, struct define...
+/// ------------------------------------------------------------------------
+class IdDefAST : public ASTBase {
+public:
+    IdDefAST() = default;
+    IdDefAST(const LineNo&, ASTBase *, const std::string&);
+
+public:
+    INSERT_ENUM(IdDefId)
+    static bool canCastTo(KAstId id) { return (id == IdDefId); }
+
+    virtual bool isVariable()   { return false; }
+    virtual bool isTypeRef()    { return false; }
+    virtual bool isStructDef()  { return false; }
+
+    void setDataType(DataTypeAST *ty)         { DataType = ty; }
+    void setName    (const std::string &name) { Name = name; }
+
+    DataTypeAST *getDataType()  { return DataType; }
+    const char  *getName    ()  { return Name.c_str(); }
+
+    void setLLVMValue(llvm::Value *v) { Value = v; }
+    llvm::Value *getLLVMValue()       { return Value; }
+
+private:
+    DataTypeAST *DataType;
+    std::string Name;
+
+    /// llvm
+    llvm::Value *Value = nullptr;
+};
+
+
+/// ------------------------------------------------------------------------
+/// @brief Variable ast expression the variable that user defined
+/// ------------------------------------------------------------------------
+class VariableAST : public IdDefAST {
+public:
+    VariableAST() = default;
+    VariableAST(const LineNo&, ASTBase *, const std::string&);
+
+public:
+    INSERT_ENUM(VariableId)
+    static bool canCastTo(KAstId id) { return (id == VariableId || IdDefAST::canCastTo(id)); }
+
+
+    void setIsStatic    ()      { VarFlag = (VarFlag & 0xFFFFFFFE) | 0x1; }
+    void setIsConst     ()      { VarFlag = (VarFlag & 0xFFFFFFFD) | 0x2; }
+    void setIsProtected ()      { VarFlag = (VarFlag & 0xFFFFFFE3) | 0x4; }
+    void setIsPrivate   ()      { VarFlag = (VarFlag & 0xFFFFFFE3) | 0x8; }
+    void setIsPublic    ()      { VarFlag = (VarFlag & 0xFFFFFFE3) | 0x10; }
+    void setIsExtern    ()      { VarFlag = (VarFlag & 0xFFFFFFDF) | 0x20; }
+
+    bool isStatic       ()      { return VarFlag & 0x1; }
+    bool isConst        ()      { return VarFlag & 0x2; }
+    bool isProtected    ()      { return VarFlag & 0x4; }
+    bool isPrivate      ()      { return VarFlag & 0x8; }
+    bool isPublic       ()      { return VarFlag & 0x10; }
+    bool isExtern       ()      { return VarFlag & 0x20; }
+    bool isArrray       ()      { return !Dims.empty(); }
+    bool hasInitExpr    ()      { return InitExpr != nullptr; }
+
+    unsigned                      getArrayDimSize    ()  { return Dims.size(); }
+    const std::vector<ExprAST *> &getDims            ()  { return Dims; }
+    const char                   *getName            ()  { return VarName.c_str(); }
+    ExprAST                      *getInitExpr        ()  { return InitExpr; }
+    ExprAST                      *getIndexDimLength  (unsigned index) { return Dims[index]; }
+
+    void addDims    (ExprAST *dim)            { Dims.push_back(dim); }
+    void setInitExpr(ExprAST *expr)           { InitExpr = expr; }
+    void setName    (const std::string &name) { this->VarName = name; }
+private:
+    unsigned VarFlag;                       // the flag that record the variable message
+    std::string VarName;                    // the variable name
+    std::vector<ExprAST *> Dims;            // the dimensions record of the variable
+    ExprAST *InitExpr = nullptr;            // the init expr of the variable
+
+public:
+    INSERT_ACCEPT
+};
+
+/// ------------------------------------------------------------------------
 /// @brief Var def ast expressar define andar extern in kaleidoscope.
 /// ------------------------------------------------------------------------
-class VarDefAST : public StatementAST {
+class DataDeclAST : public StatementAST {
 private:
-    StructDefAST    *StructDef{nullptr};    // 对应的结构体变量定义指针，暂时不支持，留空
-    std::string      VarName;               // 变量名
-    KType            VarType;               // 变量类型
-    bool             IsConst;               // 是否是const
-    Value           *Val      {nullptr};    // 对应的llvm value
-    ExprAST         *Init     {nullptr};    // initialize expression
+    std::vector<VariableAST *> VarDecls;
+public:
+    INSERT_ENUM(DataDeclId)
+    static bool canCastTo(KAstId id) { return (id == DataDeclId || StatementAST::canCastTo(id)); }
 
 public:
-    INSERT_ENUM(VarDefId)
-    static bool canCastTo(KAstId id) { return (id == VarDefId || StatementAST::canCastTo(id)); }
+    DataDeclAST(const LineNo&, ASTBase*);
 
 public:
-    VarDefAST(const LineNo&, const std::string&, KType);
+    void addVarDecl(VariableAST *v) { VarDecls.push_back(v); }
 
-public:
-    void setStructDefAST    (StructDefAST *sdef)      { StructDef = sdef; }
-    void setVarName         (const std::string& name) { VarName = name; }
-    void setVarType         (KType type)              { VarType = type; }
-    void setIsConst         (bool flag)               { IsConst = flag; }
-    void setLLVMValue       (Value *v)                { Val = v; }
-    void setInitExpr        (ExprAST *init)           { Init = init; }
-    
-    StructDefAST *getStructDefAST() { return StructDef; }
-    std::string   getVarName     () { return VarName; }
-    Value        *getLLVMValue   () { return Val; }
-    ExprAST      *getInitExpr    () { return Init; }
-    KType         getVarType     () { return VarType; }
-    bool          isConst        () { return IsConst; }
+    const std::vector<VariableAST *>& getVarDecls() { return VarDecls; }
 
 public:
     INSERT_ACCEPT
@@ -292,7 +371,7 @@ class BlockStmtAST : public StatementAST {
 private:
     std::vector<StatementAST*> Stmts;
 public:
-    explicit BlockStmtAST(const LineNo&);
+    explicit BlockStmtAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(BlockStmtId)
@@ -315,7 +394,7 @@ private:
     ExprAST *RetExpr = {nullptr};
 
 public:
-    explicit ReturnStmtAST(const LineNo&);
+    explicit ReturnStmtAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(ReturnStmtId)
@@ -335,8 +414,8 @@ public:
 /// ------------------------------------------------------------------------
 class BreakStmtAST : public StatementAST {
 public:
-    BreakStmtAST(const LineNo&);
-
+    BreakStmtAST() = default;
+    BreakStmtAST(const LineNo&, ASTBase *);
 public:
     INSERT_ENUM(BreakStmtId)
     static bool canCastTo(KAstId id) { return (id == BreakStmtId || StatementAST::canCastTo(id)); }
@@ -350,7 +429,7 @@ public:
 /// ------------------------------------------------------------------------
 class ContinueStmtAST : public StatementAST {
 public:
-    ContinueStmtAST(const LineNo&);
+    ContinueStmtAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(ContinueStmtId)
@@ -377,8 +456,8 @@ public:
 
 public:
     ForStmtAST() = default;
-    ForStmtAST(const LineNo&, ExprAST*, ExprAST*, ExprAST*);
-    ForStmtAST(const LineNo&);
+    ForStmtAST(const LineNo&, ASTBase*, ExprAST*, ExprAST*, ExprAST*);
+    ForStmtAST(const LineNo&, ASTBase*);
 
 public:
     void setExpr1       (ExprAST *expr)      { Expr1 = expr; }
@@ -409,7 +488,7 @@ public:
     static bool canCastTo(KAstId id) { return (id == WhileStmtId || StatementAST::canCastTo(id)); }
 
 public: 
-    explicit WhileStmtAST(const LineNo&, ExprAST*);
+    explicit WhileStmtAST(const LineNo&, ASTBase*, ExprAST*);
 
 public:
     void setCond     (ExprAST *cond)      { Cond = cond; }
@@ -437,7 +516,7 @@ public:
     static bool canCastTo(KAstId id) { return (id == IfStmtId || StatementAST::canCastTo(id)); }
 
 public:
-    explicit IfStmtAST(const LineNo&, ExprAST*);
+    explicit IfStmtAST(const LineNo&, ASTBase*, ExprAST*);
 
     void setCond        (ExprAST *cond)          { Cond = cond; }
     void setElse        (StatementAST *elseStmt) { Else = elseStmt; }
@@ -458,7 +537,7 @@ public:
 class ExprAST : public ASTBase {
 public:
     ExprAST() = default;
-    explicit ExprAST(const LineNo& line);
+    explicit ExprAST(const LineNo& line, ASTBase*);
 public:
     INSERT_ENUM(ExprId)
     static bool canCastTo(KAstId id) { return (id == ExprId); }
@@ -471,7 +550,7 @@ public:
 /// ------------------------------------------------------------------------
 class InitializedAST : public ExprAST {
 public:
-    explicit InitializedAST(const LineNo&);
+    explicit InitializedAST(const LineNo&, ASTBase*);
 
 public:
     INSERT_ENUM(InitializeId)
@@ -506,7 +585,7 @@ public:
     static bool canCastTo(KAstId id) { return (id == BinExprId || ExprAST::canCastTo(id)); }
 
 public:
-    BinaryExprAST(const LineNo&, Operator, ExprAST*, ExprAST*);
+    BinaryExprAST(const LineNo&, ASTBase*, Operator, ExprAST*, ExprAST*);
     
      void setOperator(Operator op)      { Op = op; }
      void setLhs     (ExprAST *lhs)     { Lhs = lhs; }
@@ -536,7 +615,7 @@ public:
 
 public:
     UnaryExprAST() = default;
-    UnaryExprAST(const LineNo&, Operator, ExprAST*);
+    UnaryExprAST(const LineNo&, ASTBase*, Operator, ExprAST*);
 
     void setOperator    (Operator op)   { this->Op = op; }
     void setUnaryExpr   (ExprAST *expr) { this->Expr = expr; }
@@ -562,8 +641,9 @@ public:
     static bool canCastTo(KAstId id) { return (id == LiteralId || ExprAST::canCastTo(id)); }
 
 public:
-    LiteralExprAST(const LineNo&);
-    LiteralExprAST(const LineNo&, const std::string&);
+    LiteralExprAST() = default;
+    LiteralExprAST(const LineNo&, ASTBase*);
+    LiteralExprAST(const LineNo&, ASTBase*, const std::string&);
 
 public:
     void appendCharacter(char c) { Str.push_back(c); }
@@ -595,10 +675,10 @@ public:
     static bool canCastTo(KAstId id) { return (id == NumberId || ExprAST::canCastTo(id)); }
 
 public: 
-    explicit NumberExprAST(const LineNo&, char);
-    explicit NumberExprAST(const LineNo&, long);
-    explicit NumberExprAST(const LineNo&, double);
-    explicit NumberExprAST(const LineNo&, bool);
+    explicit NumberExprAST(const LineNo&, ASTBase*, char);
+    explicit NumberExprAST(const LineNo&, ASTBase*, long);
+    explicit NumberExprAST(const LineNo&, ASTBase*, double);
+    explicit NumberExprAST(const LineNo&, ASTBase*, bool);
 
     bool            isBoolLiteral   () { return IsBool; }
     bool            isLong          () { return IsLong; }
@@ -613,7 +693,7 @@ public:
     unsigned long   getULongValue   () { return (unsigned long)LValue; }
     double          getDoubleValue  () { return DValue; }
     float           getFloatValue   () { return (float)DValue; }
-    bool            getBoolValue    () { return BValue; }\
+    bool            getBoolValue    () { return BValue; }
 
 public:
     INSERT_ACCEPT
@@ -625,24 +705,21 @@ public:
 /// ------------------------------------------------------------------------
 class IdRefAST : public ExprAST {
 private:
-    const std::string     IdName;             //ar name
-    ParamAST             *Param{nullptr};     // param define
-    VarDefAST            *VarDef{nullptr};    //ar define
+    const std::string     IdName;             // var name
+    IdDefAST             *Id;                 // define id
 
 public:
-    explicit IdRefAST(const LineNo&, const std::string&);
+    explicit IdRefAST(const LineNo&, ASTBase *, const std::string&);
 
 public:
     INSERT_ENUM(IdRefId)
     static bool canCastTo(KAstId id) { return (id == IdRefId || ExprAST::canCastTo(id)); }
 
 public:
-    void setVarDef  (VarDefAST*ar)      { VarDef =ar; }
-    void setParam   (ParamAST *param)   { Param = param; }
+    void setId(IdDefAST *id) { Id = id; }
 
-    Value       *getLLVMValue();
-    ParamAST    *getParam()     const { return Param; }
-    VarDefAST   *getVarDef()    const { return VarDef; }
+    Value       *getLLVMValue()       { Id->getLLVMValue(); }
+    IdDefAST    *getId()              { return Id; }
     std::string  getIdName()    const { return IdName; }
 
 public:
@@ -657,10 +734,9 @@ class IdIndexedRefAST : public ExprAST {
 private:
     std::vector<ExprAST*>  Indexes;             // indexes list
     const std::string      IdName;              // var name
-    ParamAST              *Param{nullptr};      // param define
-    VarDefAST             *VarDef{nullptr};     // var define
+    IdDefAST             *Id;                   // define id
 public:
-    explicit IdIndexedRefAST(const LineNo&, const std::string&);
+    explicit IdIndexedRefAST(const LineNo&, ASTBase*, const std::string&);
 
 public:
     INSERT_ENUM(IdIndexedRefId)
@@ -668,12 +744,10 @@ public:
 
 public:
     void addIndex   (ExprAST *expr)     { Indexes.push_back(expr); }
-    void setVarDef  (VarDefAST *var)    { VarDef = var; }
-    void setParam   (ParamAST *param)   { Param = param; }
+    void setId(IdDefAST *id) { Id = id; }
 
-    Value                        *getLLVMValue();
-    ParamAST                     *getParam()    const { return Param; }
-    VarDefAST                    *getVarDef()   const { return VarDef; }
+    Value                        *getLLVMValue()      { Id->getLLVMValue(); }
+    IdDefAST                     *getId()             { return Id; }
     const std::vector<ExprAST*>  &getIndexes()  const { return Indexes; }
     std::string                   getIdName()   const { return IdName; }
 public:
@@ -690,7 +764,7 @@ private:
     const std::string      FuncName;                           // 函数名
     std::vector<ExprAST *> Args;
 public:
-    explicit CallExprAST(const LineNo&, const std::string&);
+    explicit CallExprAST(const LineNo&, ASTBase*, const std::string&);
 
 public:
     INSERT_ENUM(CallId)
