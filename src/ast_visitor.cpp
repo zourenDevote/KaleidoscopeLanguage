@@ -19,6 +19,7 @@ void AstVisitor::visit(ProgramAST *node) {
 
 void AstVisitor::visit(ParamAST *node) {
     preAction(node);
+    TraversNode(node->getId());
     postAction(node);
 }
 
@@ -41,10 +42,21 @@ void AstVisitor::visit(StructDefAST *node) {
     postAction(node);
 }   
 
-void AstVisitor::visit(VarDefAST *node) {
+void AstVisitor::visit(DataDeclAST *node) {
     preAction(node);
-    TraversNode(node->getStructDefAST());
-    TraversNode(node->getInitExpr());
+    TraversArray(node->getVarDecls());
+    postAction(node);
+}
+
+void AstVisitor::visit(DataTypeAST *node) {
+    preAction(node);
+    postAction(node);
+}
+
+void AstVisitor::visit(VariableAST *node) {
+    preAction(node);
+    TraversNode(node->getDataType())
+    TraversNode(node->getInitExpr())
     postAction(node);
 }
 
@@ -123,12 +135,14 @@ void AstVisitor::visit(IdRefAST *node) {
 }
 
 void AstVisitor::visit(IdIndexedRefAST *node) {
-    preAction(node); 
+    preAction(node);
+    TraversArray(node->getIndexes())
     postAction(node);
 }
 
 void AstVisitor::visit(CallExprAST *node) {
-    preAction(node); 
+    preAction(node);
+    TraversArray(node->getArgs())
     postAction(node);
 }
 
@@ -147,7 +161,9 @@ ACCEPT(ParamAST)
 ACCEPT(FuncAST)
 ACCEPT(InitializedAST)
 ACCEPT(StructDefAST)
-ACCEPT(VarDefAST)
+ACCEPT(DataDeclAST)
+ACCEPT(DataTypeAST)
+ACCEPT(VariableAST)
 ACCEPT(BlockStmtAST)
 ACCEPT(ReturnStmtAST)
 ACCEPT(BreakStmtAST)

@@ -103,7 +103,9 @@ caseStmt : CASE expr ':' stmt
 
 default : DEFAULT ':' stmt
 
-expr : logicExpr
+expr : assignExpr
+
+assignExpr : idRef '=' logicExpr
 
 logicExpr : bitExpr ('&&' | '||') bitExpr
 
@@ -136,7 +138,7 @@ constExpr : LITERAL
 ```
 
 ## 测试
-
+[回归测试说明](./doc/AboutTest.zn.md)
 ## 编译流程
 
 ![编译顺序](./doc/pic2.png)

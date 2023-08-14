@@ -52,50 +52,50 @@ const char* typeName[] = {
 
 void DumpVisitor::preAction(ASTBase *node) {
     // write you code here;
-    for(int i = 0; i < deepTh; i++) {
-        if(i == deepTh - 1){
-            std::cout <<"|-";
-        }else {
-            std::cout << " ";
-        }
-    }
-
-    int astIndex = node->getClassId();
-    LineNo* address = node->getLineNo();
-    std::string shortAddress = std::to_string(reinterpret_cast<uintptr_t>(node));
-    shortAddress = "0x" + shortAddress.substr(shortAddress.length() - 6);
-    int typeIndex;
-    switch (astIndex) {
-        case 1: {
-            VarDefAST *varDefNode = dynamic_cast<VarDefAST *>(node);
-            typeIndex = varDefNode->getVarType();
-            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
-                      << address->Col << ">"
-                      << "  '" << typeName[typeIndex] << "' '" << varDefNode->getVarName() << "' "
-                      << std::endl;
-            break;
-        }
-        case 2: {
-            FuncAST *funcNode = dynamic_cast<FuncAST *>(node);
-            typeIndex = funcNode->getRetType();
-            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
-                      << address->Col << ">"
-                      << "  '" << typeName[typeIndex] << "' '" << funcNode->getFuncName() << "' "
-                      << std::endl;
-            break;
-        }
-        default: {
-            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
-                      << address->Col << ">" << std::endl;
-            break;
-        }
-    }
-    deepTh++;
+//    for(int i = 0; i < deepTh; i++) {
+//        if(i == deepTh - 1){
+//            std::cout <<"|-";
+//        }else {
+//            std::cout << " ";
+//        }
+//    }
+//
+//    int astIndex = node->getClassId();
+//    LineNo* address = node->getLineNo();
+//    std::string shortAddress = std::to_string(reinterpret_cast<uintptr_t>(node));
+//    shortAddress = "0x" + shortAddress.substr(shortAddress.length() - 6);
+//    int typeIndex;
+//    switch (astIndex) {
+//        case : {
+//            DataDeclAST *varDefNode = dynamic_cast<DataDeclAST *>(node);
+//            typeIndex = varDefNode->getVarType();
+//            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
+//                      << address->Col << ">"
+//                      << "  '" << typeName[typeIndex] << "' '" << varDefNode->getVarName() << "' "
+//                      << std::endl;
+//            break;
+//        }
+//        case 2: {
+//            FuncAST *funcNode = dynamic_cast<FuncAST *>(node);
+//            typeIndex = funcNode->getRetType();
+//            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
+//                      << address->Col << ">"
+//                      << "  '" << typeName[typeIndex] << "' '" << funcNode->getFuncName() << "' "
+//                      << std::endl;
+//            break;
+//        }
+//        default: {
+//            std::cout << astName[astIndex] << " " << shortAddress << " " << "<line:" << address->Row << ", col:"
+//                      << address->Col << ">" << std::endl;
+//            break;
+//        }
+//    }
+//    deepTh++;
 }
 
 
 
 void DumpVisitor::postAction(ASTBase *node) {
     // write you code here;
-    deepTh--;
+//    deepTh--;
 }

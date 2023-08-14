@@ -55,10 +55,10 @@ public:
 private:
     void getNextToken();
     void parseProgram();
-    KType parseTypeDecl();
-    std::vector<VarDefAST*> parseVarExtern();
+    DataTypeAST *parseTypeDecl();
+    DataDeclAST *parseVarExtern();
     FuncAST *parseFuncExtern();
-    std::vector<VarDefAST*> parseVarDef();
+    DataDeclAST *parseVarDef();
     ExprAST *parseInitExpr();
     FuncAST *parseFuncDef();
     ASTBase *parseImportDecl();
@@ -77,6 +77,7 @@ private:
     StatementAST *parseCaseStmt();
     StatementAST *parseDefault();
     ExprAST *parseExpr();
+    ExprAST *parseAssignExpr();
     ExprAST *parseLogicExpr();
     ExprAST *parseBitExpr();
     ExprAST *parseCmpExpr();
@@ -91,6 +92,9 @@ private:
 
 public:
     ProgramAST *getProg() { return ProgAst; }
+
+private:
+    std::vector<ASTBase *> NodeStack;
 
 private:
     static std::unordered_map<ProgramAST *, GrammarParser *> ProgToGrammarParserMap;

@@ -14,7 +14,9 @@ class ParamAST;
 class FuncAST;
 class InitializedAST;
 class StructDefAST;
-class VarDefAST;
+class VariableAST;
+class DataDeclAST;
+class DataTypeAST;
 class BlockStmtAST;
 class ReturnStmtAST;
 class BreakStmtAST;
@@ -52,7 +54,9 @@ public:
     ADD_VISITOR(FuncAST)
     ADD_VISITOR(InitializedAST)
     ADD_VISITOR(StructDefAST)
-    ADD_VISITOR(VarDefAST)
+    ADD_VISITOR(DataTypeAST)
+    ADD_VISITOR(VariableAST)
+    ADD_VISITOR(DataDeclAST)
     ADD_VISITOR(BlockStmtAST)
     ADD_VISITOR(ReturnStmtAST)
     ADD_VISITOR(BreakStmtAST)

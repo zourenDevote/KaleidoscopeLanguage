@@ -5,7 +5,7 @@ extern newline();
 def main() : int {
     int a;
     a = getint();
-    if a >= 0 then
+    if (a >= 0) then
         putint(a);
     else 
         putint(-a);

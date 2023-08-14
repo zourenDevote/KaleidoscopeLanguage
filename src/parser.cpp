@@ -5,10 +5,7 @@
 
 
 #include <string>
-#include <stdio.h>
-#include <algorithm>
 #include <cctype>
-#include <cstdio>
 #include <cstdlib>
 #include <cassert>
 #include <vector>
@@ -18,7 +15,7 @@
 /// -----------------------------------------------------
 /// @brief Code implication of class TokenParser
 /// -----------------------------------------------------
-TokenParser::TokenParser(unsigned fileIndex) {
+TokenParser::TokenParser(unsigned fileIndex){
     this->LineInfo = {fileIndex, 0, 0};
     this->DoubleNumVal = 0.0;
     this->IntNumVal = 0;
@@ -67,6 +64,13 @@ Token TokenParser::getToken() {
         getChar();
     }
 
+    if(LastChar == '#') {
+        do {
+            getChar();
+        }
+        while(LastChar != EOF && LastChar != '\n');
+        getChar();
+    }
 
     /// parse import "xxx.k"
     if(LastChar == '\"') {
@@ -74,7 +78,7 @@ Token TokenParser::getToken() {
         getChar();
         // @TODO need to import check
         while(LastChar != '\"') {
-            LiteralVal += LastChar;
+            LiteralVal += (char)LastChar;
             getChar();
             // if(LastChar == '\n' || LastChar == ' ' || LastChar == '\r') {
             //     LOG_ERROR("Illigal character in import literal \'%c\'", LineInfo, LastChar);
@@ -211,13 +215,6 @@ Token TokenParser::getToken() {
         case '^': { getChar(); return tok_bitxor; }
     }
 
-    if(LastChar == '#') {
-        do {
-            getChar();
-        }
-        while(LastChar != EOF && LastChar != '\n');
-    }
-
     if(LastChar == EOF)
         return tok_eof; 
 
@@ -264,6 +261,7 @@ GrammarParser::GrammarParser(ProgramAST *prog) {
 }
 
 void GrammarParser::generateSrcToAst() {
+    NodeStack.clear();
     parseProgram();
 }
 
@@ -274,17 +272,18 @@ void GrammarParser::getNextToken() {
 void GrammarParser::parseProgram() {
 
     assert(ProgAst && "Program ast can't be nullptr");
-
+    NodeStack.push_back(ProgAst);
     while(TkParser->lookUp(1)[0] != tok_eof) {
         switch(TkParser->lookUp(1)[0]) {
             case tok_extern: {
                 switch(TkParser->lookUp(2)[1]) {
                     case tok_id: {
                         ProgAst->addCompElem(parseFuncExtern());
+                        break;
                     }
-                    default:{
-                        for(auto *vardef : parseVarExtern())
-                            ProgAst->addCompElem(vardef);
+                    default: {
+                        ProgAst->addCompElem(parseVarExtern());
+                        break;
                     }
                 }
                 break;
@@ -298,54 +297,47 @@ void GrammarParser::parseProgram() {
                 break;
             }
             default : {
-                for(auto *vardef : parseVarDef())
-                    ProgAst->addCompElem(vardef);
+                ProgAst->addCompElem(parseVarDef());
                 break;
             }
         }
     }
+    NodeStack.pop_back();
 }
 
-KType GrammarParser::parseTypeDecl() {
+DataTypeAST *GrammarParser::parseTypeDecl() {
+    LineNo line = TkParser->getCurLineNo();
+    KType datatype;
     getNextToken();
     switch (CurTok)
     {
-    case tok_void:
-        return Void;
-    case tok_double:
-        return Double;
-    case tok_float:
-        return Float;
-    case tok_bool:
-        return Bool;
-    case tok_char:
-        return Char;
-    case tok_uchar:
-        return UChar;
-    case tok_short:
-        return Short;
-    case tok_ushort:
-        return UShort;
-    case tok_int:
-        return Int;
-    case tok_uint:
-        return Uint;
-    case tok_long:
-        return Long;
-    case tok_ulong:
-        return ULong;
-    case tok_struct:
-        return Struct;
+    case tok_void:      { return nullptr;     }
+    case tok_double:    { datatype = Double;break;   }
+    case tok_float:     { datatype = Float;break;    }
+    case tok_bool:      { datatype = Bool;break;     }
+    case tok_char:      { datatype = Char;break;     }
+    case tok_uchar:     { datatype = UChar;break;    }
+    case tok_short:     { datatype = Short;break;    }
+    case tok_ushort:    { datatype = UShort;break;   }
+    case tok_int:       { datatype = Int;break;      }
+    case tok_uint:      { datatype = Uint;break;     }
+    case tok_long:      { datatype = Long;break;     }
+    case tok_ulong:     { datatype = ULong;break;    }
+    case tok_struct:    { datatype = Struct;break;   }
     default:
         LOG_ERROR("unsupport type declare", TkParser->getCurLineNo())
     }
+    return new DataTypeAST(line, NodeStack.back(), datatype);
 }
 
 
-std::vector<VarDefAST*> GrammarParser::parseVarExtern()   {
+DataDeclAST *GrammarParser::parseVarExtern()   {
 
+    LineNo line = TkParser->getCurLineNo();
     // eat extern
     getNextToken();
+
+    DataDeclAST *Decl = new DataDeclAST(line, NodeStack.back());
 
     bool isConst = false;
     if(TkParser->lookUp(1)[0] == tok_const) {
@@ -353,10 +345,11 @@ std::vector<VarDefAST*> GrammarParser::parseVarExtern()   {
         isConst = true;
     }
 
-    KType type = parseTypeDecl();
-    std::vector<VarDefAST*> externVarList;
-    LineNo line;
-    VarDefAST *def;
+    DataTypeAST *type = parseTypeDecl();
+    if(TkParser->lookUp(1)[0] != tok_id) {
+        LOG_ERROR("without any data decl!", TkParser->getCurLineNo())
+    }
+
     while(TkParser->lookUp(1)[0] != ';') {
         
         line = TkParser->getCurLineNo();
@@ -364,33 +357,32 @@ std::vector<VarDefAST*> GrammarParser::parseVarExtern()   {
         getNextToken();
 
         if(CurTok != tok_id) {
-            LOG_ERROR("Illegal variable extern declare", line);
+            LOG_ERROR("Illegal variable extern declare", line)
         }
 
-        def = new VarDefAST(line, TkParser->getIdStr(), type);
-        def->setIsConst(isConst);
+        auto *var = new VariableAST(line, Decl, TkParser->getIdStr());
+        if(isConst) var->setIsConst();
+        var->setIsExtern();
+        var->setDataType(type);
 
+        NodeStack.push_back(var);
         while(TkParser->lookUp(1)[0] == '[') {
             // eat '['
             getNextToken();
             
             line = TkParser->getCurLineNo();
+
+            var->addDims(parseExpr());
+
             if(TkParser->lookUp(1)[0] != ']'){
                 LOG_ERROR("not have dim declare", line)
-            } 
-
-            def->setInitExpr(parseExpr());
-
-            line = TkParser->getCurLineNo();
-            getNextToken();
-
-            if(CurTok != ']') {
-                LOG_ERROR("missing ']'", line)
             }
 
+            getNextToken();
         }
 
-        externVarList.push_back(def);
+        NodeStack.pop_back();
+        Decl->addVarDecl(var);
 
         if(TkParser->lookUp(1)[0] == ',') {
             getNextToken();
@@ -404,21 +396,19 @@ std::vector<VarDefAST*> GrammarParser::parseVarExtern()   {
         LOG_ERROR("missing ';'", TkParser->getCurLineNo())
     }
 
-    return externVarList;
+    return Decl;
 }
 
 
 FuncAST *GrammarParser::parseFuncExtern()  {
     LineNo line = TkParser->getCurLineNo();
-
-    // eat exteran
+    // eat extern
     getNextToken();
-
     // eat id
     getNextToken();
+    FuncAST *funcExtern = new FuncAST(line, NodeStack.back(), TkParser->getIdStr());
 
-    FuncAST *funcExtern = new FuncAST(line, TkParser->getIdStr(), Void);
-
+    NodeStack.push_back(funcExtern);
     // parse params
     if(TkParser->lookUp(1)[0] != '(') {
         LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
@@ -428,13 +418,13 @@ FuncAST *GrammarParser::parseFuncExtern()  {
     getNextToken();
     while(TkParser->lookUp(1)[0] != ')') {
         funcExtern->addFuncParam(parseParamDecl());
-        line = TkParser->getCurLineNo();
-        if(TkParser->lookUp(1)[0] == ',') {
+        unsigned lookUp = TkParser->lookUp(1)[0];
+        if(lookUp == ',') {
             // eat ','
             getNextToken();
         }
-        else {
-            LOG_ERROR("missing ')'", line)
+        else if(lookUp != ')') {
+            LOG_ERROR("missing ')' in function decl", TkParser->getCurLineNo());
         }
     }
 
@@ -453,26 +443,29 @@ FuncAST *GrammarParser::parseFuncExtern()  {
     // eat ';'
     getNextToken();
 
+    NodeStack.push_back(funcExtern);
     return funcExtern;
 }
 
 
 
-std::vector<VarDefAST*> GrammarParser::parseVarDef() {
-    
+DataDeclAST *GrammarParser::parseVarDef() {
+
+    LineNo line = TkParser->getCurLineNo();
+    DataDeclAST *Decl = new DataDeclAST(line, NodeStack.back());
+
     bool isConst = false;
     if(TkParser->lookUp(1)[0] == tok_const) {
-        // eat const
         getNextToken();
         isConst = true;
     }
+    DataTypeAST *type = parseTypeDecl();
+    if(TkParser->lookUp(1)[0] != tok_id) {
+        LOG_ERROR("without any data decl!", TkParser->getCurLineNo());
+    }
 
-    KType type = parseTypeDecl();
-    std::vector<VarDefAST*> externVarList;
-    LineNo line;
-    VarDefAST *def;
     while(TkParser->lookUp(1)[0] != ';') {
-        
+
         line = TkParser->getCurLineNo();
         // eat id
         getNextToken();
@@ -481,37 +474,34 @@ std::vector<VarDefAST*> GrammarParser::parseVarDef() {
             LOG_ERROR("Illegal variable extern declare", line);
         }
 
-        def = new VarDefAST(line, TkParser->getIdStr(), type);
-        def->setIsConst(isConst);
+        VariableAST *var = new VariableAST(line, Decl, TkParser->getIdStr());
+        if(isConst) var->setIsConst();
+        var->setIsExtern();
+        var->setDataType(type);
 
+        NodeStack.push_back(var);
         while(TkParser->lookUp(1)[0] == '[') {
             // eat '['
             getNextToken();
-            
+
             line = TkParser->getCurLineNo();
+
+            var->addDims(parseExpr());
+
             if(TkParser->lookUp(1)[0] != ']'){
                 LOG_ERROR("not have dim declare", line)
-            } 
-
-            def->setInitExpr(parseExpr());
-
-            line = TkParser->getCurLineNo();
-            getNextToken();
-
-            if(CurTok != ']') {
-                LOG_ERROR("missing ']'", line)
             }
 
+            getNextToken();
         }
 
         if(TkParser->lookUp(1)[0] == tok_assign) {
-            // eat assign
             getNextToken();
-            // 
-            def->setInitExpr(parseInitExpr());
+            var->setInitExpr(parseInitExpr());
         }
 
-        externVarList.push_back(def);
+        NodeStack.pop_back();
+        Decl->addVarDecl(var);
 
         if(TkParser->lookUp(1)[0] == ',') {
             getNextToken();
@@ -525,15 +515,15 @@ std::vector<VarDefAST*> GrammarParser::parseVarDef() {
         LOG_ERROR("missing ';'", TkParser->getCurLineNo())
     }
 
-    return externVarList;
-
+    return Decl;
 }
 
 
 ExprAST *GrammarParser::parseInitExpr()    {
     if(TkParser->lookUp(1)[0] == '{') {
-        InitializedAST *init = new InitializedAST(TkParser->getCurLineNo());
+        InitializedAST *init = new InitializedAST(TkParser->getCurLineNo(), NodeStack.back());
         // eat '{'
+        NodeStack.push_back(init);
         while(TkParser->lookUp(1)[0] != '}') {
             if(TkParser->lookUp(1)[0] == '{') {
                 init->setInitExpr(dynamic_cast<InitializedAST*>(parseInitExpr()));
@@ -545,10 +535,10 @@ ExprAST *GrammarParser::parseInitExpr()    {
             if(TkParser->lookUp(1)[0] == ',')
                 getNextToken();
         }
+        NodeStack.pop_back();
 
         // eat '}'
         getNextToken();
-
         return init;
     }
     return parseExpr();
@@ -564,24 +554,25 @@ FuncAST *GrammarParser::parseFuncDef()     {
     // eat id
     getNextToken();
 
-    FuncAST *funcDef = new FuncAST(line, TkParser->getIdStr(), Void);
+    FuncAST *funcDef = new FuncAST(line, NodeStack.back(), TkParser->getIdStr());
 
     // parse params
     if(TkParser->lookUp(1)[0] != '(') {
         LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
     }
 
+    NodeStack.push_back(funcDef);
     // eat '('
     getNextToken();
     while(TkParser->lookUp(1)[0] != ')') {
         funcDef->addFuncParam(parseParamDecl());
-        line = TkParser->getCurLineNo();
-        if(TkParser->lookUp(1)[0] == ',') {
+        unsigned lookUp = TkParser->lookUp(1)[0];
+        if(lookUp == ',') {
             // eat ','
             getNextToken();
         }
-        else {
-            LOG_ERROR("missing ')'", line)
+        else if(lookUp != ')') {
+            LOG_ERROR("missing ')' in function decl", TkParser->getCurLineNo());
         }
     }
 
@@ -594,7 +585,7 @@ FuncAST *GrammarParser::parseFuncDef()     {
     }
 
     funcDef->setBlockStmt(dynamic_cast<BlockStmtAST*>(parseBlockStmt()));
-
+    NodeStack.pop_back();
     return funcDef;
 }
 
@@ -618,6 +609,7 @@ ASTBase *GrammarParser::parseParamList()   { return nullptr; }
 ParamAST *GrammarParser::parseParamDecl()   {
 
     LineNo line = TkParser->getCurLineNo();
+    ParamAST *param = new ParamAST(line, NodeStack.back(), nullptr);
     bool isConst = false;
 
     if(TkParser->lookUp(1)[0] == tok_const) {
@@ -626,32 +618,31 @@ ParamAST *GrammarParser::parseParamDecl()   {
     }
 
     // eat type
-    KType type = parseTypeDecl();
+    DataTypeAST *datatype = parseTypeDecl();
 
     // eat id
     getNextToken();
-
-    ParamAST *param = new ParamAST(line, TkParser->getIdStr(), type);
-    param->setIsConst(isConst);
-
+    VariableAST *var = new VariableAST(line, param, TkParser->getIdStr());
+    NodeStack.push_back(var);
     while(TkParser->lookUp(1)[0] == '[') {
         // eat '['
         getNextToken();
+        var->addDims(parseExpr());
 
-        if(TkParser->lookUp(1)[0] == ']') {
-            getNextToken();
-            param->arrayDimAdd();
-            continue;
+        if(TkParser->lookUp(1)[0] != ']') {
+            LOG_ERROR("missing ']' in param decl", TkParser->getCurLineNo());
         }
-
-        // eat number
-        getNextToken();
-        param->arrayDimAdd();
-        param->addArrayDim(TkParser->getIntVal());
-
         // eat ']'
         getNextToken();
     }
+
+    if(TkParser->lookUp(1)[0] == tok_assign) {
+        var->setInitExpr(parseInitExpr());
+    }
+
+    NodeStack.pop_back();
+
+    param->setId(var);
     
     return param;
 }
@@ -710,18 +701,17 @@ BlockStmtAST *GrammarParser::parseBlockStmt()   {
     // eat '{'
     getNextToken();
 
-    BlockStmtAST *block = new BlockStmtAST(line);
-
+    BlockStmtAST *block = new BlockStmtAST(line, NodeStack.back());
+    NodeStack.push_back(block);
     while(TkParser->lookUp(1)[0] != '}')  {
         if(StatementAST* stmt = parseStmt()) {
             block->addStmt(stmt);
         }
         else {
-            for(auto *def : parseVarDef()) {
-                block->addStmt(def);
-            }
+            block->addStmt(parseVarDef());
         }
     }
+    NodeStack.pop_back();
 
     getNextToken();
     // eat '}'
@@ -737,7 +727,17 @@ IfStmtAST *GrammarParser::parseIfStmt()      {
     // eat 'if'
     getNextToken();
 
-    IfStmtAST *ifStmt = new IfStmtAST(line, parseExpr());
+    IfStmtAST *ifStmt = new IfStmtAST(line, NodeStack.back(), nullptr);
+    NodeStack.push_back(ifStmt);
+    getNextToken();
+    ifStmt->setCond(parseExpr());
+    getNextToken();
+    // eat then
+    getNextToken();
+
+    if(CurTok != tok_then) {
+        LOG_ERROR("missing 'then' in if stmt", TkParser->getCurLineNo());
+    }
 
     ifStmt->setStatement(parseStmt());
 
@@ -746,21 +746,21 @@ IfStmtAST *GrammarParser::parseIfStmt()      {
         getNextToken();
         ifStmt->setElse(parseStmt());
     }
+    NodeStack.pop_back();
 
     return ifStmt;
 }
 
 
 ExprStmtAST *GrammarParser::parseExprStmt()    {
-
     LineNo line = TkParser->getCurLineNo();
-    ExprStmtAST *exprStmt = new ExprStmtAST(line, parseExpr());
-
+    ExprStmtAST *exprStmt = new ExprStmtAST(line, NodeStack.back(), nullptr);
+    NodeStack.push_back(exprStmt);
+    exprStmt->setExpr(parseExpr());
+    NodeStack.pop_back();
     // eat ';'
     getNextToken();
-
     return exprStmt;
-
 }
 
 
@@ -772,25 +772,28 @@ ForStmtAST *GrammarParser::parseForStmt()     {
     getNextToken();
 
     ExprAST *expr1 = nullptr, *expr2 = nullptr, *expr3 = nullptr;
-
+    ForStmtAST *forStmt = new ForStmtAST(line, NodeStack.back(), nullptr, nullptr, nullptr);
+    NodeStack.push_back(forStmt);
     // eat '('
     getNextToken();
 
-    if(TkParser->lookUp(1)[0] != ',') {
+    if(TkParser->lookUp(1)[0] != ';') {
         expr1 = parseExpr();
     }
-
     getNextToken();
 
-    if(TkParser->lookUp(1)[0] != ',') {
+    if(TkParser->lookUp(1)[0] != ';') {
         expr2 = parseExpr();
     }
-
     getNextToken();
 
-    if(TkParser->lookUp(1)[0] != tok_in) {
+    if(TkParser->lookUp(1)[0] != ')') {
         expr3 = parseExpr();
     }
+
+    forStmt->setExpr1(expr1);
+    forStmt->setExpr2(expr2);
+    forStmt->setExpr3(expr3);
 
     // eat ')'
     getNextToken();
@@ -798,10 +801,9 @@ ForStmtAST *GrammarParser::parseForStmt()     {
     // eat 'in'
     getNextToken();
 
-    ForStmtAST *forStmt = new ForStmtAST(line, expr1, expr2, expr3);
 
     forStmt->setStatement(parseStmt());
-
+    NodeStack.pop_back();
     return forStmt;
 }
 
@@ -812,32 +814,35 @@ WhileStmtAST *GrammarParser::parseWhileStmt()   {
 
     // eat 'while'
     getNextToken();
-
+    WhileStmtAST *whileStmt = new WhileStmtAST(line, NodeStack.back(), nullptr);
+    NodeStack.push_back(whileStmt);
     // eat '('
     getNextToken();
 
     ExprAST *expr = parseExpr();
-
+    whileStmt->setCond(expr);
     // eat ')'
     getNextToken();
 
-    WhileStmtAST *whileStmt = new WhileStmtAST(line, expr);
+
 
     whileStmt->setStatement(parseStmt());
-
+    NodeStack.pop_back();
     return whileStmt;
 }
 
 
 ReturnStmtAST *GrammarParser::parseReturnStmt()  {
 
-    ReturnStmtAST *returnStmt = new ReturnStmtAST(TkParser->getCurLineNo());
+    ReturnStmtAST *returnStmt = new ReturnStmtAST(TkParser->getCurLineNo(), NodeStack.back());
 
     getNextToken();
 
+    NodeStack.push_back(returnStmt);
     if(TkParser->lookUp(1)[0] != ';') {
         returnStmt->setRetExpr(dynamic_cast<ExprAST*>(parseExpr()));
     }
+    NodeStack.pop_back();
     
     getNextToken();
 
@@ -850,7 +855,7 @@ BreakStmtAST *GrammarParser::parseBreakStmt()   {
     LineNo line = TkParser->getCurLineNo();
     getNextToken();
     getNextToken();
-    return new BreakStmtAST(line);
+    return new BreakStmtAST(line, NodeStack.back());
 }
 
 
@@ -858,7 +863,7 @@ ContinueStmtAST *GrammarParser::parseContinueStmt(){
     LineNo line = TkParser->getCurLineNo();
     getNextToken();
     getNextToken();
-    return new ContinueStmtAST(line);
+    return new ContinueStmtAST(line, NodeStack.back());
 }
 
 
@@ -867,7 +872,26 @@ StatementAST *GrammarParser::parseCaseStmt()    {assert(false && "Unsupport attr
 StatementAST *GrammarParser::parseDefault()     {assert(false && "Unsupport attribute"); return nullptr;}
 
 
-ExprAST *GrammarParser::parseExpr()        { return parseLogicExpr(); }
+ExprAST *GrammarParser::parseExpr()        { return parseAssignExpr(); }
+
+ExprAST *GrammarParser::parseAssignExpr() {
+    LineNo line = TkParser->getCurLineNo();
+    ExprAST *lhs = parseLogicExpr();
+    BinaryExprAST *binExpr = nullptr;
+    if(TkParser->lookUp(1)[0] == tok_assign) {
+        getNextToken();
+        if(lhs->getClassId() != IdRefId && lhs->getClassId() != IdIndexedRefId) {
+            LOG_ERROR("error of left assign expr", line)
+        }
+        auto rhs = parseLogicExpr();
+        binExpr = new BinaryExprAST(line, NodeStack.back(), Assign, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
+    }
+
+    if(binExpr) return binExpr;
+    return lhs;
+}
 
 ExprAST *GrammarParser::parseLogicExpr()   {
     
@@ -880,7 +904,9 @@ ExprAST *GrammarParser::parseLogicExpr()   {
         getNextToken();
         Operator op = LogicOpSet[(Token)CurTok];
         ExprAST *rhs = parseBitExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -904,7 +930,9 @@ ExprAST *GrammarParser::parseBitExpr()     {
         getNextToken();
         Operator op = BitOpSet[(Token)CurTok];
         ExprAST *rhs = parseCmpExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -928,7 +956,9 @@ ExprAST *GrammarParser::parseCmpExpr()     {
         getNextToken();
         Operator op = CmpOpSet[(Token)CurTok];
         ExprAST *rhs = parseBitMoveExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -951,7 +981,9 @@ ExprAST *GrammarParser::parseBitMoveExpr() {
         getNextToken();
         Operator op = BitMoveOpSet[(Token)CurTok];
         ExprAST *rhs = parseAddExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -974,7 +1006,9 @@ ExprAST *GrammarParser::parseAddExpr()     {
         getNextToken();
         Operator op = AddOpSet[(Token)CurTok];
         ExprAST *rhs = parseMulExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -997,7 +1031,9 @@ ExprAST *GrammarParser::parseMulExpr()     {
         getNextToken();
         Operator op = MulOpSet[(Token)CurTok];
         ExprAST *rhs = parseUnaryExpr();
-        binExpr = new BinaryExprAST(line, op, lhs, rhs);
+        binExpr = new BinaryExprAST(line, NodeStack.back(), op, lhs, rhs);
+        lhs->setParent(binExpr);
+        rhs->setParent(binExpr);
         line = TkParser->getCurLineNo();
         lhs = binExpr;
     }
@@ -1015,7 +1051,11 @@ ExprAST *GrammarParser::parseUnaryExpr()   {
     if(UnaryOpSet.find(TkParser->lookUp(1)[0]) != UnaryOpSet.end()) {
         getNextToken();
         Operator op = UnaryOpSet[(Token)CurTok];
-        return new UnaryExprAST(line, op, parseUnaryExpr());
+        UnaryExprAST *unary = new UnaryExprAST(line, NodeStack.back(), op, nullptr);
+        NodeStack.push_back(unary);
+        unary->setUnaryExpr(parseUnaryExpr());
+        NodeStack.pop_back();
+        return unary;
     }
     return parsePrimaryExpr();
 }
@@ -1049,16 +1089,18 @@ ExprAST *GrammarParser::parseIdRef()       {
     getNextToken();
 
     if(TkParser->lookUp(1)[0] == '[') {
-        IdIndexedRefAST *indexes = new IdIndexedRefAST(line, TkParser->getIdStr());
+        auto *indexes = new IdIndexedRefAST(line, NodeStack.back(), TkParser->getIdStr());
+        NodeStack.push_back(indexes);
         while(TkParser->lookUp(1)[0] == '[') {
             getNextToken();
             indexes->addIndex(parseExpr());
             getNextToken();
         }
+        NodeStack.pop_back();
         return indexes;
     }
     else {
-        return new IdRefAST(line, TkParser->getIdStr());
+        return new IdRefAST(line, NodeStack.back(), TkParser->getIdStr());
     }
 
 }
@@ -1068,8 +1110,9 @@ ExprAST *GrammarParser::parseCallExpr()    {
 
     LineNo line = TkParser->getCurLineNo();
     getNextToken();
-    CallExprAST *callExpr = new CallExprAST(line, TkParser->getIdStr());
+    auto *callExpr = new CallExprAST(line, NodeStack.back(), TkParser->getIdStr());
 
+    NodeStack.push_back(callExpr);
     // eat '('
     getNextToken();
 
@@ -1080,6 +1123,7 @@ ExprAST *GrammarParser::parseCallExpr()    {
         else
             break;
     }
+    NodeStack.pop_back();
 
     // eat ')'
     getNextToken();
@@ -1093,31 +1137,31 @@ ExprAST *GrammarParser::parseConstExpr()   {
     switch(TkParser->lookUp(1)[0]) {
         case tok_literal: {
             getNextToken();
-            return new LiteralExprAST(line, TkParser->getLiteral());
+            return new LiteralExprAST(line, NodeStack.back(), TkParser->getLiteral());
         }
         case tok_true: {
             getNextToken();
-            return new NumberExprAST(line, true);
+            return new NumberExprAST(line, NodeStack.back(), true);
         }
         case tok_false:
         {
             getNextToken();
-            return new NumberExprAST(line, false);
+            return new NumberExprAST(line, NodeStack.back(), false);
         }
         case tok_inumber:{
             getNextToken();
-            return new NumberExprAST(line, TkParser->getIntVal());
+            return new NumberExprAST(line, NodeStack.back(), TkParser->getIntVal());
         }
         case tok_fnumber:{
             getNextToken();
-            return new NumberExprAST(line, TkParser->getDoubleVal());
+            return new NumberExprAST(line, NodeStack.back(), TkParser->getDoubleVal());
         }
         case tok_charlit:{
             getNextToken();
-            return new NumberExprAST(line, (char)TkParser->getIntVal());
+            return new NumberExprAST(line, NodeStack.back(), (char)TkParser->getIntVal());
         }
         default: {
-            LOG_ERROR("error literal", line);
+            LOG_ERROR("error literal", line)
         }
     }
 }
