@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: action/checkout@v3
 
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
@@ -39,8 +37,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: action/checkout@v3
 
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
