@@ -24,11 +24,13 @@ jobs:
 
       - name: Configure and build with CMake (Linux)
         run: |
+          mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On ..
           make -j 'nproc'
 
       - name: Test
         run: |
+          cd build
           ctest -j 'nproc' --stop-on-failure
 
   build-linux-release:
@@ -46,11 +48,13 @@ jobs:
 
       - name: Configure and build with CMake (Linux)
         run: |
+          mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On ..
           make -j 'nproc'
 
       - name: Test
         run: |
+          cd build
           ctest -j 'nproc' --stop-on-failure
       
 
