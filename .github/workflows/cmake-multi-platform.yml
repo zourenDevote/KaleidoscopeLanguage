@@ -23,15 +23,11 @@ jobs:
           sudo apt-get install cmake
 
       - name: Configure and build with CMake (Linux)
-        working-directory: ./
         run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On ../
+          cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On ..
           make -j 'nproc'
 
       - name: Test
-        working-directory: ./build
         run: |
           ctest -j 'nproc' --stop-on-failure
 
@@ -49,15 +45,11 @@ jobs:
           sudo apt-get install cmake
 
       - name: Configure and build with CMake (Linux)
-        working-directory: ./
         run: |
-          mkdir build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On ../
+          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On ..
           make -j 'nproc'
 
       - name: Test
-        working-directory: ./build
         run: |
           ctest -j 'nproc' --stop-on-failure
       
