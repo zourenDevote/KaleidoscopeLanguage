@@ -23,15 +23,16 @@ jobs:
           sudo apt-get install build-essential
           sudo apt-get install cmake
 
-      - name: Configure and build with CMake (Linux)
+      - name: Configure CMake (Linux)
         run: |
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On
-          cmake --build ${{github.workspace}}/build -j 'nproc'
+          cmake --build ${{github.workspace}}/build
 
-      - name: Test
+      - name: Build and Test
         working-directory: ${{github.workspace}}/build
         run: |
-          ctest -j 'nproc' --stop-on-failure
+          cmake -j 16
+          ctest -j 16 --stop-on-failure
 
   build-linux-release:
     runs-on: ubuntu-latest
@@ -50,12 +51,12 @@ jobs:
       - name: Configure and build with CMake (Linux)
         run: |
           cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On
-          cmake --build ${{github.workspace}}/build -j 'nproc'
 
-      - name: Test
+      - name: Build and Test
         working-directory: ${{github.workspace}}/build
         run: |
-          ctest -j 'nproc' --stop-on-failure
+          make -j 16
+          ctest -j 16 --stop-on-failure
 
       
 
