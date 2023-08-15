@@ -1,5 +1,3 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
 name: CMake on multiple platforms
 
 on:
@@ -10,9 +8,12 @@ on:
 
 jobs:
   build-linux-debug:
+    
+  
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v3
 
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
@@ -24,10 +25,11 @@ jobs:
 
       - name: Configure and build with CMake (Linux)
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On
-          make -j 'nproc'
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Debug -DENABLE_CTEST=On
+          cmake --build ${{github.workspace}}/build -j 'nproc'
 
       - name: Test
+        working-directory: ${{github.workspace}}/build
         run: |
           ctest -j 'nproc' --stop-on-failure
 
@@ -35,7 +37,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
+      - uses: actions/checkout@v3
+  
       - name: Set up LLVM on Linux
         if: runner.os == 'Linux'
         run: |
@@ -46,12 +49,14 @@ jobs:
 
       - name: Configure and build with CMake (Linux)
         run: |
-          cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On 
-          make -j 'nproc'
+          cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On
+          cmake --build ${{github.workspace}}/build -j 'nproc'
 
       - name: Test
+        working-directory: ${{github.workspace}}/build
         run: |
           ctest -j 'nproc' --stop-on-failure
+
       
 
 
