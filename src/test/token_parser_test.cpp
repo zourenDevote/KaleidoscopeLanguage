@@ -5,6 +5,7 @@
 #include "test/test.h"
 #include <iostream>
 
+using namespace kale;
 
 static const Token ParseResult[] = {
     tok_def, tok_extern, tok_if, tok_for, tok_while, tok_else, 

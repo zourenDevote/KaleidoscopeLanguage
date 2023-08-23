@@ -1,11 +1,12 @@
 
-#ifndef KALEIDOSCOPE_PARSER
-#define KALEIDOSCOPE_PARSER
+#ifndef KALE_PARSER_H
+#define KALE_PARSER_H
 
 #include <unordered_map>
 #include "token.h"
 #include "ast.h"
 
+namespace kale {
 
 /// -----------------------------------------------------
 /// @brief Token parser class, this class defined to parse
@@ -103,5 +104,6 @@ public:
 };
 /// -----------------------------------------------------
 
+}
 
 #endif

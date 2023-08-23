@@ -1,6 +1,8 @@
 #include "ast.h"
 #include <cassert>
 
+namespace kale{
+
 /// ----------------------------------------------------------
 /// ASTBase code
 ASTBase::ASTBase(const LineNo& lineNo, ASTBase *parent) : LineMsg(lineNo),
@@ -230,3 +232,4 @@ llvm::Function *CallExprAST::getLLVMFunction() {
 }
 /// ----------------------------------------------------------
 
+}

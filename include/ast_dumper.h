@@ -1,8 +1,10 @@
 
-#ifndef KALE_AST_DUMPER
-#define KALE_AST_DUMPER
+#ifndef KALE_AST_DUMPER_H
+#define KALE_AST_DUMPER_H
 
 #include "ast_visitor.h"
+
+namespace kale {
 
 class DumpVisitor : public AstVisitor {
 
@@ -13,5 +15,7 @@ public:
     void preAction(ASTBase *node) override;
     void postAction(ASTBase *node) override;
 };
+
+}
 
 #endif

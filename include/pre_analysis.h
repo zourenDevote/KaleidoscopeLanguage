@@ -1,4 +1,8 @@
 
+#ifndef KALE_PRE_ANALYSIS_H
+#define KALE_PRE_ANALYSIS_H
+
+namespace kale {
 
 /// -------------------------------------------------------------
 /// @brief This function parse input sources file list
@@ -8,6 +12,10 @@
 /// return false
 /// -------------------------------------------------------------
 bool preFileDepAnalysis();
+
+}
+
+#endif 
 
 
 

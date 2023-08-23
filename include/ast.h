@@ -1,7 +1,7 @@
 
 
-#ifndef KALEIDSCOPE_AST
-#define KALEIDSCOPE_AST
+#ifndef KALE_AST_H
+#define KALE_AST_H
 
 // clang-format off
 
@@ -12,7 +12,10 @@
 
 #include <vector>
 
+
 using namespace llvm;
+
+namespace kale {
 
 struct LineNo {
     unsigned FileIndex;
@@ -541,6 +544,12 @@ public:
 public:
     INSERT_ENUM(ExprId)
     static bool canCastTo(KAstId id) { return (id == ExprId); }
+
+public:
+    void setExprType(KType ty) { ExprType = ty; }
+    KType getExprType() { return ExprType; }
+private:
+    KType ExprType;
 };
 
 /// ------------------------------------------------------------------------
@@ -781,6 +790,8 @@ public:
 public:
     INSERT_ACCEPT
 };
+
+}
 
 // clang-format on
 

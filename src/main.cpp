@@ -15,8 +15,9 @@
 #include <iostream>
 
 
-using namespace cxxopts;
 
+using namespace cxxopts;
+using namespace kale;
 
 /// @brief parse command line option and init some global variable
 /// @param argc 
@@ -118,19 +119,8 @@ int main(int argc, char *argv[]) {
     
     /// @fixme ast generate test
     for(auto *prog : ProgramList) {
-        switch (prog->getCompiledFlag()) {
-            case ProgramAST::Success: {
-                break;
-            }
-            case ProgramAST::Failed: {
-                std::cerr << "Exit with error!" << std::endl;
-                return 1;
-            }
-            case ProgramAST::NotCompiled: {
-                auto parser = GrammarParser::getOrCreateGrammarParserByProg(prog);
-                parser->generateSrcToAst();
-            }
-        }
+        auto parser = GrammarParser::getOrCreateGrammarParserByProg(prog);
+        parser->generateSrcToAst();
     }
 
 #ifdef __CTEST_ENABLE__

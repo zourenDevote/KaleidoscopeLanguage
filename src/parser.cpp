@@ -12,6 +12,8 @@
 #include <map>
 #include <set>
 
+namespace kale {
+
 /// -----------------------------------------------------
 /// @brief Code implication of class TokenParser
 /// -----------------------------------------------------
@@ -263,6 +265,7 @@ GrammarParser::GrammarParser(ProgramAST *prog) {
 void GrammarParser::generateSrcToAst() {
     NodeStack.clear();
     parseProgram();
+
 }
 
 void GrammarParser::getNextToken() {
@@ -561,7 +564,7 @@ FuncAST *GrammarParser::parseFuncDef()     {
         LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
     }
 
-    NodeStack.push_back(funcDef);
+    NodeStack.push_back((ASTBase*)funcDef);
     // eat '('
     getNextToken();
     while(TkParser->lookUp(1)[0] != ')') {
@@ -1182,6 +1185,6 @@ GrammarParser *GrammarParser::getOrCreateGrammarParserByProg(ProgramAST *prog) {
 }
 /// ------------------------------------------------------
 
-
+}
 
 

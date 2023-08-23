@@ -2,6 +2,8 @@
 #include "ast.h"
 #include "ast_dumper.h"
 
+namespace kale {
+
 int deepTh = 0;
 const char* astName[] = {
         "ProgramId",          /* This type express program                                        */
@@ -98,4 +100,6 @@ void DumpVisitor::preAction(ASTBase *node) {
 void DumpVisitor::postAction(ASTBase *node) {
     // write you code here;
 //    deepTh--;
+}
+
 }

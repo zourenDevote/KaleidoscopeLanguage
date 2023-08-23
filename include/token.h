@@ -1,6 +1,8 @@
 
-#ifndef KALEIDOSCOPE_TOKEN
-#define KALEIDOSCOPE_TOKEN
+#ifndef KALE_TOKEN_H
+#define KALE_TOKEN_H
+
+namespace kale {
 
 enum Token: unsigned {
   tok_eof = 256,           // --> 终结符 EOF
@@ -72,6 +74,7 @@ enum Token: unsigned {
   tok_bitxor               // --> operator ^
 };
 
+}
 
 #endif
 

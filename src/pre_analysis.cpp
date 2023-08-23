@@ -8,6 +8,7 @@
 #include "pre_analysis.h"
 #include "global_variable.h"
 
+namespace kale {
 
 /// ----------------------------------------------------------------
 /// static variable defined to help pre analysis
@@ -189,5 +190,5 @@ bool preFileDepAnalysis() {
 }
 /// ----------------------------------------------------------------
 
-
+}
 

@@ -1,7 +1,16 @@
 
+#ifndef KALE_GLOBAL_VARIABLE_H
+#define KALE_GLOBAL_VARIABLE_H
+
 #include <vector>
 #include <string>
 #include "ast.h"
+#include "llvm/IR/Module.h"
+
+namespace kale {
+
+/// T ==> The global context
+extern llvm::LLVMContext GlobalContext;
 
 /// T ==> The input source file list
 extern std::vector<std::string> InputFileList;
@@ -36,3 +45,7 @@ extern bool OnlyParse;
 extern bool OnlyPrintAST;
 extern bool OnlyPrintIR;
 #endif
+
+}
+
+#endif 
