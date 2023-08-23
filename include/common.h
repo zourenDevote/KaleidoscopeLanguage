@@ -1,7 +1,8 @@
 
-#ifndef KALEIDOSCOPE_COMMON
-#define KALEIDOSCOPE_COMMON
+#ifndef KALE_COMMON_H
+#define KALE_COMMON_H
 
+namespace kale {
 
 /// ------------------------------------------------------------------------
 /// @brief The enum type enum the ast type of kaleidoscope language's
@@ -98,6 +99,11 @@ enum Operator {
 };
 
 #define INSERT_ACCEPT void accept(AstVisitor &v) override; 
-#define INSERT_ENUM(X) KAstId getClassId() override { return X; }
+#define INSERT_ENUM(X) KAstId getClassId() override { return X; } \
+                       static KAstId classId() { return X; } 
+
+#define ADD_VISITOR_OVERRIDE(X) void visit(X *node) override;
+
+}
 
 #endif 

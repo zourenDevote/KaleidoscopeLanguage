@@ -17,7 +17,10 @@ set(SRC_FILE
     ast_visitor.cpp
     ast_dumper.cpp
     ast.cpp
+    ir_support.cpp
+    kale_util.cpp
     parser.cpp
+    ir_builder.cpp
     test/token_parser_test.cpp 
     main.cpp)
 

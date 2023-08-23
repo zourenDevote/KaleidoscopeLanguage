@@ -1,5 +1,11 @@
 
 #include "global_variable.h"
+#include "llvm/IR/Module.h"
+
+namespace kale {
+
+/// T ==> The global context
+llvm::LLVMContext GlobalContext;
 
 /// T ==> The input source file list
 std::vector<std::string> InputFileList;
@@ -34,3 +40,5 @@ bool OnlyParse = false;
 bool OnlyPrintIR = false;
 bool OnlyPrintAST = false;
 #endif
+
+}

@@ -2,6 +2,8 @@
 #include "ast_visitor.h"
 #include "ast.h"
 
+namespace kale {
+
 #define TraversNode(X) if(X) { X->accept(*this); }
 
 #define TraversArray(X) for(auto node : X) { node->accept(*this); }
@@ -184,4 +186,4 @@ ACCEPT(ExprStmtAST)
 #undef ACCEPT
 #endif
 
-
+}

@@ -5,8 +5,10 @@
  * @overview: This file is the visitor defined to visit the ast node.
 */
 
-#ifndef KALEIDOSCOPE_AST_VISITOR
-#define KALEIDOSCOPE_AST_VISITOR
+#ifndef KALE_AST_VISITOR_H
+#define KALE_AST_VISITOR_H
+
+namespace kale {
 
 class ASTBase;
 class ProgramAST;
@@ -24,6 +26,7 @@ class ContinueStmtAST;
 class ForStmtAST;
 class WhileStmtAST;
 class IfStmtAST;
+class ExprAST;
 class BinaryExprAST;
 class UnaryExprAST;
 class LiteralExprAST;
@@ -38,7 +41,7 @@ class ExprStmtAST;
 #define TraversArray(X) for(auto *node : X) { node->accept(this); }
 
 #ifndef ADD_VISITOR
-#define ADD_VISITOR(X) void visit(X *node);
+#define ADD_VISITOR(X) virtual void visit(X *node);
 /// ------------------------------------------------------------------------
 /// @brief AstVisitor this class is the base class to visit the ast node.
 /// ------------------------------------------------------------------------
@@ -81,6 +84,8 @@ public:
 
 #undef ADD_VISITOR
 #endif
+
+}
 
 #endif
 
