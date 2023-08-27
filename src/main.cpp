@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     if(PrintAST) {
         DumpVisitor v;
         for(auto *prog : ProgramList) {
-            v.visit(prog);
+            prog->accept(v);
         }
     }
 

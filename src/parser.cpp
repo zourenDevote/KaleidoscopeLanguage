@@ -438,6 +438,10 @@ FuncAST *GrammarParser::parseFuncExtern()  {
         getNextToken();
         funcExtern->setRetType(parseTypeDecl());
     }
+    else {
+        auto *retTy = new DataTypeAST(*funcExtern->getLineNo(), funcExtern, Void);
+        funcExtern->setRetType(retTy);
+    }
 
     if(TkParser->lookUp(1)[0] != ';') {
         LOG_ERROR("missing ';'", TkParser->getCurLineNo())
@@ -586,6 +590,10 @@ FuncAST *GrammarParser::parseFuncDef()     {
         getNextToken();
         funcDef->setRetType(parseTypeDecl());
     }
+    else {
+        auto *retTy = new DataTypeAST(*funcDef->getLineNo(), funcDef, Void);
+        funcDef->setRetType(retTy);
+    }
 
     funcDef->setBlockStmt(dynamic_cast<BlockStmtAST*>(parseBlockStmt()));
     NodeStack.pop_back();
@@ -626,6 +634,7 @@ ParamAST *GrammarParser::parseParamDecl()   {
     // eat id
     getNextToken();
     VariableAST *var = new VariableAST(line, param, TkParser->getIdStr());
+    var->setDataType(datatype);
     NodeStack.push_back(var);
     while(TkParser->lookUp(1)[0] == '[') {
         // eat '['
