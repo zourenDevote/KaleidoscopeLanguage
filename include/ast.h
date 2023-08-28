@@ -779,7 +779,7 @@ public:
     INSERT_ENUM(CallId)
     static bool canCastTo(KAstId id) { return (id == CallId || ExprAST::canCastTo(id)); }
 
-    void setLLVMFunction(FuncAST *func)     { this->TheCallFunction = func; }
+    void setFunction    (FuncAST *func)     { this->TheCallFunction = func; }
     void addArg         (ExprAST *arg)      { Args.push_back(arg); }
 
     const std::vector<ExprAST*> &getArgs()          const    { return this->Args; }

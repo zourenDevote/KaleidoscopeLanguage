@@ -37,6 +37,11 @@ extern bool CompileAndRun;
 extern bool UseMultThreadCompile;
 extern int ThreadCount;
 
+/// T ==> Use LLVM Tool Chain flag
+extern bool UseLLVMToolChainFlag;
+
+/// T ==> Opt level;
+extern KaleOptLevel OptLevel;
 
 /// T ==> This global variable define for test
 #ifdef __CTEST_ENABLE__

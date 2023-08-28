@@ -98,6 +98,13 @@ enum Operator {
     BitXor,             /* operator ^   */
 };
 
+enum KaleOptLevel {
+    O0,
+    O1,
+    O2,
+    O3
+};
+
 #define INSERT_ACCEPT void accept(AstVisitor &v) override; 
 #define INSERT_ENUM(X) KAstId getClassId() override { return X; } \
                        static KAstId classId() { return X; } 

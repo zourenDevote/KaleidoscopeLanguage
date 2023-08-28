@@ -1,8 +1,11 @@
 
 
 #include "global_variable.h"
+#include "ir_support.h"
+#include "asm_builder.h"
 #include "pre_analysis.h"
 #include "ast_dumper.h"
+#include "ir_builder.h"
 #include "cxxopts.hpp"
 #include "parser.h"
 
@@ -13,7 +16,6 @@
 
 #include <memory>
 #include <iostream>
-
 
 
 using namespace cxxopts;
@@ -43,8 +45,9 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("h, help", "Print help")
             ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"))
             ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
-            ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"));
-
+            ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"))
+            ("use-llvm-tool-chain", "Use llvm tool chain", cxxopts::value<bool>()->default_value("true"))
+            ("O, optimize-level", "Optimize level", cxxopts::value<unsigned>()->default_value("0"));
 #ifdef __CTEST_ENABLE__
         options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"))
         ("only-print-ast", "Only print ast", cxxopts::value<bool>()->default_value("false"))
@@ -72,6 +75,7 @@ int parseCmdArgs(int argc, char *argv[]) {
         PrintIR = result["print-ir"].as<bool>();
         DumpIRToLL = result["serialize-ir"].as<bool>();
         CompileAndRun = result["run"].as<bool>();
+        UseLLVMToolChainFlag = result["use-llvm-tool-chain"].as<bool>();
 
 
         ThreadCount = result["j"].as<int>();
@@ -81,6 +85,17 @@ int parseCmdArgs(int argc, char *argv[]) {
         }
 
         OutputFileName = result["output"].as<std::string>();
+
+        switch (result["optimize-level"].as<unsigned>()) {
+            case O1: OptLevel = O1;
+                break;
+            case O2: OptLevel = O2;
+                break;
+            case O3: OptLevel = O3;
+                break;
+            default:
+                OptLevel = O0;
+        }
 
 #ifdef __CTEST_ENABLE__
         TokenParserTestFlag = result["token_test"].as<bool>();
@@ -146,22 +161,40 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 #endif
-
+    KaleIRTypeSupport::initIRTypeSupport();
+    KaleIRConstantValueSupport::initIRConastantSupport();
     /// generate ir
+    for(auto *prog : ProgramList) {
+        auto builder = KaleIRBuilder::getOrCreateIrBuilderByProg(prog);
+        prog->accept(*builder);
+        if(!llvm::verifyModule(*builder->getLLVMModule())) {
+            std::cerr << "Exit with error!" << std::endl;
+            return 1;
+        }
+    }
 
     /// print ir
     if(PrintIR) {
-
+        for(auto *prog : ProgramList) {
+            auto m = KaleIRBuilder::getOrCreateIrBuilderByProg(prog)->getLLVMModule();
+            m->print(llvm::outs(), nullptr);
+        }
     }
 
 #ifdef __CTEST_ENABLE__
     if (OnlyPrintIR) {
-
+        for(auto *prog : ProgramList) {
+            auto m = KaleIRBuilder::getOrCreateIrBuilderByProg(prog)->getLLVMModule();
+            m->print(llvm::outs(), nullptr);
+        }
         return 0;
     }
 #endif
-
     /// compile ir to executable file
+    if(LLVMBuilderChain(argv[0]).runAndCompileToExecutable()) {
+        std::cerr << "Exit with error!";
+        return 1;
+    }
 
     /// run this case?
     if(CompileAndRun) {

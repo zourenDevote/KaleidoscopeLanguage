@@ -1,8 +1,8 @@
 
-extern getint() : int;
-extern putint(int d);
-extern space();
-extern newline();
+extern GetInt() : int;
+extern PutInt(int d);
+extern Space();
+extern NewLine();
 
 int globalArray[10];
 
@@ -10,18 +10,18 @@ def main() : int {
     int i;
     i = 0;
     while (i < 10) {
-        globalArray[i] = getint();
+        globalArray[i] = GetInt();
         i = i + 1;
     }
 
     i = 9;
     while (i >= 0) {
-        putint(globalArray[i]);
-        space();
+        PutInt(globalArray[i]);
+        Space();
         i = i - 1;
     }
 
-    newline();
+    NewLine();
 
     return 0;
 }

@@ -3,6 +3,7 @@
 #define KALE_PARSER_H
 
 #include <unordered_map>
+#include <unordered_set>
 #include "token.h"
 #include "ast.h"
 
@@ -92,13 +93,32 @@ private:
     ExprAST *parseConstExpr();
 
 public:
+    /* Get function def ast , if not have define or extern, will return nullptr */
+    FuncAST *getFuncASTNode(const std::string & name);
+    /* Get variable def ast , if not have define or extern, will return nullptr */
+    VariableAST *getVariableNode(const std::string& name);
+    VariableAST *getVariableNodeFromGlobalMap(const std::string& name);
+    VariableAST *getVariableNodeFromOtherGlobalMap(const std::string& name);
+    /* Insert function define to this map, if already define this func, it will return false */
+    bool insertFunctionToFuncMap(FuncAST *node);
+    /* Insert variable define to this map, if already define this func, it will return false */
+    bool insertVariableToVarMap(VariableAST *var);
+public:
     ProgramAST *getProg() { return ProgAst; }
 
 private:
-    std::vector<ASTBase *> NodeStack;
+    void enterNewSymTab();
+    void leaveCurSymTab();
 
 private:
+    bool IsFuncScope = false;
+    std::vector<ASTBase *> NodeStack;
+    std::unordered_map<std::string, FuncAST *> FuncDefMap;
+    std::unordered_map<std::string, VariableAST *> GlobalVariableMap;
+    std::vector<std::unordered_map<std::string, VariableAST *>> SymTabMap;
+private:
     static std::unordered_map<ProgramAST *, GrammarParser *> ProgToGrammarParserMap;
+
 public:
     static GrammarParser *getOrCreateGrammarParserByProg(ProgramAST *prog);
 };

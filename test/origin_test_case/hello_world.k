@@ -1,21 +1,22 @@
 
-extern putchar(int v);
-extern newline();
-extern space();
+extern PutChar(int v);
+extern NewLine();
+extern Space();
 
 # HelloWorld
 def main() : int {
-    putchar(72);
-    putchar(101);
-    putchar(108);
-    putchar(111);
-    putchar(44);
-    space();
-    putchar(87);
-    putchar(111);
-    putchar(114);
-    putchar(108);
-    putchar(100);
-    newline();
+    PutChar(72);
+    PutChar(101);
+    PutChar(108);
+    PutChar(108);
+    PutChar(111);
+    PutChar(44);
+    Space();
+    PutChar(87);
+    PutChar(111);
+    PutChar(114);
+    PutChar(108);
+    PutChar(100);
+    NewLine();
     return 0;
 }
