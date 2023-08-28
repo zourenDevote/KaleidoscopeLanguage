@@ -198,7 +198,9 @@ int main(int argc, char *argv[]) {
 
     /// run this case?
     if(CompileAndRun) {
-
+        std::string cmd = "./" + OutputFileName;
+        auto res = system(cmd.c_str());
+        return  res;
     }
 
     return 0;
