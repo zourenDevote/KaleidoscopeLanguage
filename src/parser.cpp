@@ -127,7 +127,7 @@ Token TokenParser::getToken() {
     if (isdigit(LastChar)) {
         std::string NumStr = "";
         bool isFloat = false;
-        NumStr += LastChar;
+//        NumStr += LastChar;
         do {
             NumStr += LastChar;
             getChar();
@@ -259,6 +259,8 @@ std::vector<Token> TokenParser::lookUp(unsigned n) {
 /// -----------------------------------------------------
 GrammarParser::GrammarParser(ProgramAST *prog) {
     ProgAst = prog;
+    SymTabMap = {};
+    GlobalVariableMap = {};
     TkParser = new TokenParser(prog->getLineNo()->FileIndex);
 }
 
@@ -386,7 +388,7 @@ DataDeclAST *GrammarParser::parseVarExtern()   {
 
         NodeStack.pop_back();
         Decl->addVarDecl(var);
-
+        insertVariableToVarMap(var);
         if(TkParser->lookUp(1)[0] == ',') {
             getNextToken();
         }
@@ -419,6 +421,7 @@ FuncAST *GrammarParser::parseFuncExtern()  {
 
     // eat '('
     getNextToken();
+    enterNewSymTab();
     while(TkParser->lookUp(1)[0] != ')') {
         funcExtern->addFuncParam(parseParamDecl());
         unsigned lookUp = TkParser->lookUp(1)[0];
@@ -430,6 +433,7 @@ FuncAST *GrammarParser::parseFuncExtern()  {
             LOG_ERROR("missing ')' in function decl", TkParser->getCurLineNo());
         }
     }
+    leaveCurSymTab();
 
     // eat ')'
     getNextToken();
@@ -438,6 +442,10 @@ FuncAST *GrammarParser::parseFuncExtern()  {
         getNextToken();
         funcExtern->setRetType(parseTypeDecl());
     }
+    else {
+        auto *retTy = new DataTypeAST(*funcExtern->getLineNo(), funcExtern, Void);
+        funcExtern->setRetType(retTy);
+    }
 
     if(TkParser->lookUp(1)[0] != ';') {
         LOG_ERROR("missing ';'", TkParser->getCurLineNo())
@@ -445,7 +453,7 @@ FuncAST *GrammarParser::parseFuncExtern()  {
 
     // eat ';'
     getNextToken();
-
+    insertFunctionToFuncMap(funcExtern);
     NodeStack.push_back(funcExtern);
     return funcExtern;
 }
@@ -505,7 +513,7 @@ DataDeclAST *GrammarParser::parseVarDef() {
 
         NodeStack.pop_back();
         Decl->addVarDecl(var);
-
+        insertVariableToVarMap(var);
         if(TkParser->lookUp(1)[0] == ',') {
             getNextToken();
         }
@@ -558,7 +566,8 @@ FuncAST *GrammarParser::parseFuncDef()     {
     getNextToken();
 
     FuncAST *funcDef = new FuncAST(line, NodeStack.back(), TkParser->getIdStr());
-
+    enterNewSymTab();
+    IsFuncScope = true;
     // parse params
     if(TkParser->lookUp(1)[0] != '(') {
         LOG_ERROR("missing '(' in function extern", TkParser->getCurLineNo());
@@ -586,7 +595,11 @@ FuncAST *GrammarParser::parseFuncDef()     {
         getNextToken();
         funcDef->setRetType(parseTypeDecl());
     }
-
+    else {
+        auto *retTy = new DataTypeAST(*funcDef->getLineNo(), funcDef, Void);
+        funcDef->setRetType(retTy);
+    }
+    insertFunctionToFuncMap(funcDef);
     funcDef->setBlockStmt(dynamic_cast<BlockStmtAST*>(parseBlockStmt()));
     NodeStack.pop_back();
     return funcDef;
@@ -626,6 +639,7 @@ ParamAST *GrammarParser::parseParamDecl()   {
     // eat id
     getNextToken();
     VariableAST *var = new VariableAST(line, param, TkParser->getIdStr());
+    var->setDataType(datatype);
     NodeStack.push_back(var);
     while(TkParser->lookUp(1)[0] == '[') {
         // eat '['
@@ -646,6 +660,7 @@ ParamAST *GrammarParser::parseParamDecl()   {
     NodeStack.pop_back();
 
     param->setId(var);
+    insertVariableToVarMap(var);
     
     return param;
 }
@@ -699,7 +714,12 @@ StatementAST *GrammarParser::parseStmt()        {
 
 
 BlockStmtAST *GrammarParser::parseBlockStmt()   {
-
+    if(!IsFuncScope) {
+        enterNewSymTab();
+    }
+    else {
+        IsFuncScope = false;
+    }
     LineNo line = TkParser->getCurLineNo();
     // eat '{'
     getNextToken();
@@ -718,7 +738,7 @@ BlockStmtAST *GrammarParser::parseBlockStmt()   {
 
     getNextToken();
     // eat '}'
-
+    leaveCurSymTab();
     return block;
 }
 
@@ -1100,10 +1120,29 @@ ExprAST *GrammarParser::parseIdRef()       {
             getNextToken();
         }
         NodeStack.pop_back();
+        if(auto var = getVariableNode(indexes->getIdName())) {
+            indexes->setId(var);
+        }
+        else if(auto var = getVariableNodeFromGlobalMap(indexes->getIdName())) {
+            indexes->setId(var);
+        }
+        else {
+            LOG_ERROR("var not define!", line)
+        }
         return indexes;
     }
     else {
-        return new IdRefAST(line, NodeStack.back(), TkParser->getIdStr());
+        auto idref = new IdRefAST(line, NodeStack.back(), TkParser->getIdStr());
+        if(auto var = getVariableNode(idref->getIdName())) {
+            idref->setId(var);
+        }
+        else if(auto var = getVariableNodeFromGlobalMap(idref->getIdName())) {
+            idref->setId(var);
+        }
+        else {
+            LOG_ERROR("var not define!", line)
+        }
+        return idref;
     }
 
 }
@@ -1114,7 +1153,12 @@ ExprAST *GrammarParser::parseCallExpr()    {
     LineNo line = TkParser->getCurLineNo();
     getNextToken();
     auto *callExpr = new CallExprAST(line, NodeStack.back(), TkParser->getIdStr());
-
+    if(FuncAST *func = getFuncASTNode(callExpr->getName())) {
+        callExpr->setFunction(func);
+    }
+    else {
+        LOG_ERROR("not define or declare this function", line)
+    }
     NodeStack.push_back(callExpr);
     // eat '('
     getNextToken();
@@ -1184,6 +1228,84 @@ GrammarParser *GrammarParser::getOrCreateGrammarParserByProg(ProgramAST *prog) {
     return ProgToGrammarParserMap[prog];
 }
 /// ------------------------------------------------------
+
+FuncAST *GrammarParser::getFuncASTNode(const std::string &name) {
+    if(FuncDefMap.find(name) != FuncDefMap.end())
+        return FuncDefMap[name];
+    for(auto *prog : ProgAst->getDependentProgs()){
+        if(FuncAST *func = getOrCreateGrammarParserByProg(prog)->getFuncASTNode(name)){
+            return func;
+        }
+    }
+    return nullptr;
+}
+
+VariableAST *GrammarParser::getVariableNode(const std::string & name) {
+    auto rbegin = SymTabMap.rbegin();
+    auto rend = SymTabMap.rend();
+    while(rbegin != rend) {
+        auto& map = *rbegin;
+        if(map.find(name) != map.end()) {
+            return map[name];
+        }
+        rbegin++;
+    }
+    return nullptr;
+}
+
+VariableAST *GrammarParser::getVariableNodeFromGlobalMap(const std::string& name) {
+    if(GlobalVariableMap.find(name) != GlobalVariableMap.end())
+        return GlobalVariableMap[name];
+    for(auto *prog : ProgAst->getDependentProgs()){
+        auto parser = getOrCreateGrammarParserByProg(prog);
+        if(VariableAST *var = parser->getVariableNodeFromOtherGlobalMap(name))
+            return var;
+    }
+    return nullptr;
+}
+
+VariableAST *GrammarParser::getVariableNodeFromOtherGlobalMap(const std::string& name) {
+    if(VariableAST *var = getVariableNodeFromGlobalMap(name)) {
+        if(var->isStatic())
+            return nullptr;
+        return var;
+    }
+    return nullptr;
+}
+
+bool GrammarParser::insertFunctionToFuncMap(FuncAST *node) {
+    if(FuncAST *func = getFuncASTNode(node->getFuncName()))
+        return false;
+    FuncDefMap.insert({node->getFuncName(), node});
+    return true;
+}
+
+bool GrammarParser::insertVariableToVarMap(VariableAST *var) {
+    if(SymTabMap.empty()) {
+        if(VariableAST *var1 = getVariableNodeFromGlobalMap(var->getName()))
+            return false;
+        for(auto *prog : ProgAst->getDependentProgs()) {
+            auto parser = getOrCreateGrammarParserByProg(prog);
+            if(VariableAST *var1 = parser->getVariableNodeFromOtherGlobalMap(var->getName()))
+                return false;
+        }
+        GlobalVariableMap.insert({var->getName(), var});
+    }
+    else {
+        if(SymTabMap.back().find(var->getName()) != SymTabMap.back().end())
+            return false;
+        SymTabMap.back().insert({var->getName(), var});
+    }
+    return true;
+}
+
+void GrammarParser::enterNewSymTab() {
+    SymTabMap.push_back({});
+}
+
+void GrammarParser::leaveCurSymTab() {
+    SymTabMap.pop_back();
+}
 
 }
 

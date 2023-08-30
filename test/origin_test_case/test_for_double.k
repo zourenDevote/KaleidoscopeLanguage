@@ -1,23 +1,23 @@
 
-extern getdouble() : double;
-extern putdouble(double v);
-extern space();
-extern newline();
+extern GetDouble() : double;
+extern PutDouble(double v);
+extern Space();
+extern NewLine();
 
 double globalArray[10];
 
 def main() : int {
     int i;
     for (i = 0 ; i < 10 ; i = i+1) in {
-        globalArray[i] = getdouble();
+        globalArray[i] = GetDouble();
     }
 
     for (i = 0 ; i < 10 ; i = i+1) in {
-        putdouble(globalArray[i]);
-        space();
+        PutDouble(globalArray[i]);
+        Space();
     }
 
-    newline();
+    NewLine();
 
     return 0;
 }

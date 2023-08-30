@@ -2,6 +2,9 @@
 #include "ir_builder.h"
 #include "ir_support.h"
 #include "global_variable.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/Support/Host.h"
+#include "llvm/ADT/Triple.h"
 #include "cast.h"
 #include "ast.h"
 
@@ -13,7 +16,9 @@ KaleIRBuilder::KaleIRBuilder(ProgramAST *prog) : Prog(prog) {
     assert(prog && "program can not be nullptr");
     std::string module_name = "module" + std::to_string(prog->getLineNo()->FileIndex);
     TheModule = new llvm::Module(module_name, GlobalContext);
+    TheModule->setTargetTriple(llvm::sys::getDefaultTargetTriple());
     TheIRBuilder = new llvm::IRBuilder<>(GlobalContext);
+    CurBblk = nullptr;
 }
 
 void KaleIRBuilder::generateProgToIr() {
@@ -40,7 +45,7 @@ void KaleIRBuilder::generateProgToIr() {
 void KaleIRBuilder::visit(FuncAST *node) {
     llvm::FunctionType *funcTy = getFunctionTypeByFuncASTNode(node);
     if(node->isFuncDeclare()) {
-        TheModule->getOrInsertFunction(node->getFuncName(), funcTy);
+       node->setLLVMFunction(llvm::dyn_cast<llvm::Function>(TheModule->getOrInsertFunction(node->getFuncName(), funcTy).getCallee()));
     }
     else {
         createAndSetCurrentFunc(node->getFuncName(), funcTy);
@@ -99,6 +104,7 @@ void KaleIRBuilder::visit(VariableAST *node) {
 void KaleIRBuilder::visit(ReturnStmtAST *node) {
     if(node->getRetExpr()) {
         node->getRetExpr()->accept(*this);
+        TheIRBuilder->CreateRet(LastValue);
     }
     else {
         TheIRBuilder->CreateRetVoid();
@@ -138,11 +144,17 @@ void KaleIRBuilder::visit(LiteralExprAST *node) {
 }
 
 void KaleIRBuilder::visit(NumberExprAST *node) {
-    
+    LastValue = llvm::ConstantInt::get(KaleIRTypeSupport::KaleIntType, node->getIntValue());
 }
 
 void KaleIRBuilder::visit(IdRefAST *node) {
-
+    if(IsNeedPointer) {
+        LastValue = node->getId()->getLLVMValue();
+    }
+    else {
+        LastValue = node->getId()->getLLVMValue();
+        LastValue = TheIRBuilder->CreateLoad(LastValue);
+    }
 }
 
 void KaleIRBuilder::visit(IdIndexedRefAST *node) {
@@ -150,7 +162,15 @@ void KaleIRBuilder::visit(IdIndexedRefAST *node) {
 }
 
 void KaleIRBuilder::visit(CallExprAST *node) {
-
+    std::vector<llvm::Value *> args = {};
+    if(!node->getArgs().empty()) {
+        for(auto *arg : node->getArgs()) {
+            arg->accept(*this);
+            args.push_back(LastValue);
+        }
+    }
+    auto callee = node->getLLVMFunction();
+    LastValue = TheIRBuilder->CreateCall(callee, args);
 }
 
 llvm::FunctionType *KaleIRBuilder::getFunctionTypeByFuncASTNode(FuncAST *node) {
@@ -265,16 +285,16 @@ void KaleIRBuilder::createAndSetCurrentBblk(const llvm::StringRef& name) {
         else {
             TheIRBuilder->CreateBr(bblk);
         }
-        TheIRBuilder->SetInsertPoint(CurBblk);
     }
     else {
         CurBblk = bblk;
     }
+    TheIRBuilder->SetInsertPoint(CurBblk);
 }
 
 llvm::Constant *KaleIRBuilder::createConstantValue(llvm::Type *ty) {
     llvm::Constant *constvalue = nullptr;
-
+    return constvalue;
 }
 
 std::unordered_map<ProgramAST *, KaleIRBuilder *> KaleIRBuilder::ProgToIrBuilderMap = {};

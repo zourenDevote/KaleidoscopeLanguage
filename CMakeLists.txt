@@ -36,6 +36,6 @@ if(ENABLE_CTEST)
     enable_testing()
 endif()
 
-
+add_subdirectory(kale_std)
 add_subdirectory(src)
 add_subdirectory(test)

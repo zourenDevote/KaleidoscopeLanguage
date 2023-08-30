@@ -1,6 +1,6 @@
-extern getint() : int;
-extern putint(int n);
-extern newline();
+extern GetInt() : int;
+extern PutInt(int n);
+extern NewLine();
 
 def fibonacci(int n) : int {
     if (n <= 1) then
@@ -10,7 +10,7 @@ def fibonacci(int n) : int {
 
 def main() : int {
     int a;
-    a = getint();
-    putint(fibonacci(a));
-    newline();
+    a = GetInt();
+    PutInt(fibonacci(a));
+    NewLine();
 }

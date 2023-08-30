@@ -328,16 +328,13 @@ public:
 
     unsigned                      getArrayDimSize    ()  { return Dims.size(); }
     const std::vector<ExprAST *> &getDims            ()  { return Dims; }
-    const char                   *getName            ()  { return VarName.c_str(); }
     ExprAST                      *getInitExpr        ()  { return InitExpr; }
     ExprAST                      *getIndexDimLength  (unsigned index) { return Dims[index]; }
 
     void addDims    (ExprAST *dim)            { Dims.push_back(dim); }
     void setInitExpr(ExprAST *expr)           { InitExpr = expr; }
-    void setName    (const std::string &name) { this->VarName = name; }
 private:
     unsigned VarFlag;                       // the flag that record the variable message
-    std::string VarName;                    // the variable name
     std::vector<ExprAST *> Dims;            // the dimensions record of the variable
     ExprAST *InitExpr = nullptr;            // the init expr of the variable
 
@@ -779,7 +776,7 @@ public:
     INSERT_ENUM(CallId)
     static bool canCastTo(KAstId id) { return (id == CallId || ExprAST::canCastTo(id)); }
 
-    void setLLVMFunction(FuncAST *func)     { this->TheCallFunction = func; }
+    void setFunction    (FuncAST *func)     { this->TheCallFunction = func; }
     void addArg         (ExprAST *arg)      { Args.push_back(arg); }
 
     const std::vector<ExprAST*> &getArgs()          const    { return this->Args; }

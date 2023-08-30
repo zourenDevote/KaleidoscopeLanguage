@@ -32,6 +32,9 @@ bool CompileAndRun = false;
 bool UseMultThreadCompile = false;
 int ThreadCount = 1;
 
+bool UseLLVMToolChainFlag = true;
+
+KaleOptLevel OptLevel = O0;
 
 /// T ==> This global variable define for test
 #ifdef __CTEST_ENABLE__

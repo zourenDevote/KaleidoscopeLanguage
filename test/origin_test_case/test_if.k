@@ -1,14 +1,14 @@
-extern getint() : int;
-extern putint(int v);
-extern newline();
+extern GetInt() : int;
+extern PutInt(int v);
+extern NewLine();
 
 def main() : int {
     int a;
-    a = getint();
+    a = GetInt();
     if (a >= 0) then
-        putint(a);
+        PutInt(a);
     else 
-        putint(-a);
-    newline();
+        PutInt(-a);
+    NewLine();
     return 0;
 }

@@ -10,6 +10,7 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Verifier.h"
 #include <unordered_map>
 
 namespace kale {
@@ -23,11 +24,14 @@ private:
     llvm::BasicBlock    *CurBblk;
     ProgramAST          *Prog;
     bool                 IsRootScope;
+    bool                 IsNeedPointer = false;
     llvm::Value         *LastValue;
 public:
     KaleIRBuilder(ProgramAST *prog);
     void generateProgToIr();    
 
+public:
+    llvm::Module *getLLVMModule()  { return TheModule; }
 protected:
     ADD_VISITOR_OVERRIDE(FuncAST)
     ADD_VISITOR_OVERRIDE(InitializedAST)

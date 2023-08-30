@@ -1,23 +1,23 @@
 
-extern getint() : int;
-extern putint(int d);
-extern space();
-extern newline();
+extern GetInt() : int;
+extern PutInt(int d);
+extern Space();
+extern NewLine();
 
 int globalArray[10];
 
 def main() : int {
     int i;
     for (i = 0 ; i < 10 ; i = i+1) in {
-        globalArray[i] = getint();
+        globalArray[i] = GetInt();
     }
 
     for (i = 0 ; i < 10 ; i = i+1) in {
-        putint(globalArray[i]);
-        space();
+        PutInt(globalArray[i]);
+        Space();
     }
 
-    newline();
+    NewLine();
 
     return 0;
 }
