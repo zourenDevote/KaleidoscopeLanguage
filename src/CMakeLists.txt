@@ -3,44 +3,44 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(LLVM 12 REQUIRED CONFIG)
 
-set(ARCHS
-    AArch64
-    AMDGPU
-    ARM
-    AVR
-    BPF
-    Hexagon
-    Lanai
-    Mips
-    MSP430
-   # NVPTX
-    PowerPC
-    RISCV
-    Sparc
-    SystemZ
-    WebAssembly
-    X86
-  #  XCore
-)
+#set(ARCHS
+#    AArch64
+#    AMDGPU
+#    ARM
+#    AVR
+#    BPF
+#    Hexagon
+#    Lanai
+#    Mips
+#    MSP430
+#   # NVPTX
+#    PowerPC
+#    RISCV
+#    Sparc
+#    SystemZ
+#    WebAssembly
+#    X86
+#  #  XCore
+#)
 
 set(LLVM_LIBS
     "LLVMAnalysis"
     "LLVMCore"
     "LLVMSupport"
-    "LLVMAsmPrinter"
-    "LLVMXCoreCodeGen"
-    "LLVMXCoreDesc"
-    "LLVMXCoreInfo"
-    "LLVMNVPTXCodeGen"
-    "LLVMNVPTXDesc"
-    "LLVMNVPTXInfo"
+#    "LLVMAsmPrinter"
+#    "LLVMXCoreCodeGen"
+#    "LLVMXCoreDesc"
+#    "LLVMXCoreInfo"
+#    "LLVMNVPTXCodeGen"
+#    "LLVMNVPTXDesc"
+#    "LLVMNVPTXInfo"
 )
 
-foreach(arch ${ARCHS})
-    message(STATUS "ARCH ${arch}")
-    list(APPEND LLVM_LIBS "LLVM${arch}CodeGen")
-    list(APPEND LLVM_LIBS "LLVM${arch}AsmParser")
-endforeach ()
+#foreach(arch ${ARCHS})
+#    message(STATUS "ARCH ${arch}")
+#    list(APPEND LLVM_LIBS "LLVM${arch}CodeGen")
+#    list(APPEND LLVM_LIBS "LLVM${arch}AsmParser")
+#endforeach ()
 
 link_directories(${LLVM_LIBRARY_DIRS})
 

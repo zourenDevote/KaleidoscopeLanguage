@@ -101,7 +101,7 @@ int parseCmdArgs(int argc, char *argv[]) {
         TokenParserTestFlag = result["token_test"].as<bool>();
         OnlyPrintIR = result["only-print-ir"].as<bool>();
         OnlyPrintAST = result["only-print-ast"].as<bool>();
-        OnlyParse = result["only-print-ast"].as<bool>();
+        OnlyParse = result["only-parse"].as<bool>();
 #endif
 
         return 0;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
     for(auto *prog : ProgramList) {
         auto builder = KaleIRBuilder::getOrCreateIrBuilderByProg(prog);
         prog->accept(*builder);
-        if(!llvm::verifyModule(*builder->getLLVMModule())) {
+        if(llvm::verifyModule(*builder->getLLVMModule())) {
             std::cerr << "Exit with error!" << std::endl;
             return 1;
         }
@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
     /// compile ir to executable file
-    if(LLVMBuilderChain(argv[0]).runAndCompileToExecutable()) {
+   if(LLVMBuilderChain(argv[0]).runAndCompileToExecutable()) {
         std::cerr << "Exit with error!";
         return 1;
     }

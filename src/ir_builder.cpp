@@ -169,7 +169,7 @@ void KaleIRBuilder::visit(CallExprAST *node) {
             args.push_back(LastValue);
         }
     }
-    auto callee = TheModule->getOrInsertFunction(node->getLLVMFunction()->getName(),node->getLLVMFunction()->getType());
+    auto callee = node->getLLVMFunction();
     LastValue = TheIRBuilder->CreateCall(callee, args);
 }
 

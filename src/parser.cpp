@@ -259,6 +259,8 @@ std::vector<Token> TokenParser::lookUp(unsigned n) {
 /// -----------------------------------------------------
 GrammarParser::GrammarParser(ProgramAST *prog) {
     ProgAst = prog;
+    SymTabMap = {};
+    GlobalVariableMap = {};
     TkParser = new TokenParser(prog->getLineNo()->FileIndex);
 }
 
@@ -419,6 +421,7 @@ FuncAST *GrammarParser::parseFuncExtern()  {
 
     // eat '('
     getNextToken();
+    enterNewSymTab();
     while(TkParser->lookUp(1)[0] != ')') {
         funcExtern->addFuncParam(parseParamDecl());
         unsigned lookUp = TkParser->lookUp(1)[0];
@@ -430,6 +433,7 @@ FuncAST *GrammarParser::parseFuncExtern()  {
             LOG_ERROR("missing ')' in function decl", TkParser->getCurLineNo());
         }
     }
+    leaveCurSymTab();
 
     // eat ')'
     getNextToken();
@@ -712,6 +716,9 @@ StatementAST *GrammarParser::parseStmt()        {
 BlockStmtAST *GrammarParser::parseBlockStmt()   {
     if(!IsFuncScope) {
         enterNewSymTab();
+    }
+    else {
+        IsFuncScope = false;
     }
     LineNo line = TkParser->getCurLineNo();
     // eat '{'
@@ -1150,7 +1157,7 @@ ExprAST *GrammarParser::parseCallExpr()    {
         callExpr->setFunction(func);
     }
     else {
-        LOG_ERROR("func not define", line)
+        LOG_ERROR("not define or declare this function", line)
     }
     NodeStack.push_back(callExpr);
     // eat '('
@@ -1275,19 +1282,21 @@ bool GrammarParser::insertFunctionToFuncMap(FuncAST *node) {
 
 bool GrammarParser::insertVariableToVarMap(VariableAST *var) {
     if(SymTabMap.empty()) {
-        if(VariableAST *var = getVariableNodeFromGlobalMap(var->getName()))
+        if(VariableAST *var1 = getVariableNodeFromGlobalMap(var->getName()))
             return false;
         for(auto *prog : ProgAst->getDependentProgs()) {
             auto parser = getOrCreateGrammarParserByProg(prog);
-            if(VariableAST *var = parser->getVariableNodeFromOtherGlobalMap(var->getName()))
+            if(VariableAST *var1 = parser->getVariableNodeFromOtherGlobalMap(var->getName()))
                 return false;
         }
+        GlobalVariableMap.insert({var->getName(), var});
     }
     else {
         if(SymTabMap.back().find(var->getName()) != SymTabMap.back().end())
             return false;
         SymTabMap.back().insert({var->getName(), var});
     }
+    return true;
 }
 
 void GrammarParser::enterNewSymTab() {
