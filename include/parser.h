@@ -24,6 +24,7 @@ private:
     std::string LiteralVal;
     std::string IdStr;
     int LastChar;
+    bool IsSigned;
 private:
     FILE *Handle;
 public:
@@ -38,6 +39,7 @@ public:
     long   getIntVal()    const { return IntNumVal; }
     const std::string& getIdStr() const { return IdStr; }
     const std::string& getLiteral() const { return LiteralVal; }
+    bool   isSigned() { return IsSigned; }
     std::vector<Token> lookUp(unsigned i);
 };
 /// -----------------------------------------------------

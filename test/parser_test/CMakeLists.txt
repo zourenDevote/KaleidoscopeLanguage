@@ -4,6 +4,7 @@ set(TestList
         test_fibonacci
         test_for_double
         test_for_int
+        test_for1
         test_if
         test_while_double
         test_while_int

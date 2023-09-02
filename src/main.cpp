@@ -47,7 +47,8 @@ int parseCmdArgs(int argc, char *argv[]) {
             ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
             ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"))
             ("use-llvm-tool-chain", "Use llvm tool chain", cxxopts::value<bool>()->default_value("true"))
-            ("O, optimize-level", "Optimize level", cxxopts::value<unsigned>()->default_value("0"));
+            ("O, optimize-level", "Optimize level", cxxopts::value<unsigned>()->default_value("0"))
+            ("check-input", "The Check input file", cxxopts::value<std::string>());
 #ifdef __CTEST_ENABLE__
         options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"))
         ("only-print-ast", "Only print ast", cxxopts::value<bool>()->default_value("false"))
@@ -59,7 +60,7 @@ int parseCmdArgs(int argc, char *argv[]) {
 
         if(result.count("help")) {
             std::cout << options.help({""}) << std::endl;
-            return 0;   
+            exit(0);
         }
 
         if(!result.count("input")) {
@@ -103,6 +104,10 @@ int parseCmdArgs(int argc, char *argv[]) {
         OnlyPrintAST = result["only-print-ast"].as<bool>();
         OnlyParse = result["only-parse"].as<bool>();
 #endif
+        if(result.count("check-input")) {
+            CheckInputFile = result["check-input"].as<std::string>();
+            UseCheck = true;
+        }
 
         return 0;
     }
@@ -173,6 +178,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+
     /// print ir
     if(PrintIR) {
         for(auto *prog : ProgramList) {
@@ -199,8 +206,12 @@ int main(int argc, char *argv[]) {
     /// run this case?
     if(CompileAndRun) {
         std::string cmd = "./" + OutputFileName;
-        auto res = system(cmd.c_str());
-        return  res;
+
+        if(UseCheck) {
+            cmd += "| FileCheck-12 " + CheckInputFile;
+        }
+
+        return system(cmd.c_str());
     }
 
     return 0;

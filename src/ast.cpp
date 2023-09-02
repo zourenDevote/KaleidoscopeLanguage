@@ -81,7 +81,9 @@ IdDefAST::IdDefAST(const LineNo& lineNo, ASTBase *parent, const std::string &nam
 
 /// ----------------------------------------------------------
 /// VariableAST define code
-VariableAST::VariableAST(const LineNo& lineNo, ASTBase *parent, const std::string &name) : IdDefAST(lineNo, parent, name) {}
+VariableAST::VariableAST(const LineNo& lineNo, ASTBase *parent, const std::string &name) : IdDefAST(lineNo, parent, name) {
+    VarFlag = 0;
+}
 /// ----------------------------------------------------------
 
 /// ----------------------------------------------------------

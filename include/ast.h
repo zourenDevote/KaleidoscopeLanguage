@@ -670,6 +670,7 @@ private:
     bool    IsLong  {false};
     bool    IsDouble{false};
     bool    IsChar  {false};
+    bool    IsSigned{false};
 
     char    CValue;
     bool    BValue;
@@ -686,19 +687,17 @@ public:
     explicit NumberExprAST(const LineNo&, ASTBase*, double);
     explicit NumberExprAST(const LineNo&, ASTBase*, bool);
 
+    void setIsSigned(bool isSigned)    { IsSigned = isSigned; }
+
     bool            isBoolLiteral   () { return IsBool; }
     bool            isLong          () { return IsLong; }
     bool            isDouble        () { return IsDouble; }
-    char            getCharValue    () { return CValue; }
-    unsigned char   getUCharValue   () { return (unsigned char)LValue; }
-    short           getShortValue   () { return (short)LValue; }
-    unsigned short  getUShortValue  () { return (unsigned short)LValue; }
-    int             getIntValue     () { return (int)LValue; }
-    unsigned int    getUIntValue    () { return (unsigned int)LValue; }
-    long            getLongValue    () { return LValue; }
-    unsigned long   getULongValue   () { return (unsigned long)LValue; }
-    double          getDoubleValue  () { return DValue; }
-    float           getFloatValue   () { return (float)DValue; }
+    bool            isChar          () { return IsChar; }
+    bool            isSigned        () { return IsSigned; }
+    char            getCValue    () { return CValue; }
+    long            getIValue    () { return LValue; }
+    unsigned long   getUIValue   () { return (unsigned long)LValue; }
+    double          getFValue  () { return DValue; }
     bool            getBoolValue    () { return BValue; }
 
 public:
@@ -783,6 +782,7 @@ public:
     const std::string           &getName()          const    { return this->FuncName; }
     bool                         isArgEmpty()       const    { return this->Args.empty(); }
     llvm::Function              *getLLVMFunction();
+    FuncAST                     *getFuncDef()                { return TheCallFunction; }
 
 public:
     INSERT_ACCEPT

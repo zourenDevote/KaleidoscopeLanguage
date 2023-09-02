@@ -27,6 +27,17 @@ else()
     message("Failed to create directory")
 endif()
 
+execute_process(
+        COMMAND FileCheck-12 --version
+        RESULT_VARIABLE result_var
+)
+
+if(result_var EQUAL 0)
+    message("Directory lib created successfully")
+else()
+    message(FATAL_ERROR "Failed to create directory")
+endif()
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
