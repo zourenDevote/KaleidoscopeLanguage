@@ -26,6 +26,9 @@ private:
     bool                 IsRootScope;
     bool                 IsNeedPointer = false;
     llvm::Value         *LastValue;
+    KType                NeededType;
+    std::vector<llvm::BasicBlock *> AfterStack;
+    std::vector<llvm::BasicBlock *> CondStack;
 public:
     KaleIRBuilder(ProgramAST *prog);
     void generateProgToIr();    
@@ -59,6 +62,12 @@ private:
     void                createAndSetCurrentFunc(const llvm::StringRef& name, llvm::FunctionType *ty);
     void                createAndSetCurrentBblk(const llvm::StringRef& name);
     llvm::Constant     *createConstantValue(llvm::Type *ty);
+    void                storeValueToPointer(llvm::Value *lv, llvm::Value *rv);
+    void                typeConvert(llvm::Value *&lv, llvm::Value *&rv);
+    void                convertToAimType(llvm::Type *t1);
+    void                convertToI1();
+    llvm::Type         *kaleTypeToLLVMType(KType ty);
+
 private:
     static std::unordered_map<ProgramAST *, KaleIRBuilder *> ProgToIrBuilderMap;
 

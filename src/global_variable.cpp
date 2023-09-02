@@ -36,12 +36,16 @@ bool UseLLVMToolChainFlag = true;
 
 KaleOptLevel OptLevel = O0;
 
+std::string CheckInputFile;
+bool UseCheck = false;
+
 /// T ==> This global variable define for test
 #ifdef __CTEST_ENABLE__
 bool TokenParserTestFlag = false;
 bool OnlyParse = false;
 bool OnlyPrintIR = false;
 bool OnlyPrintAST = false;
+
 #endif
 
 }

@@ -56,7 +56,8 @@ set(SRC_FILE
     ir_builder.cpp
     test/token_parser_test.cpp 
     main.cpp
-    asm_builder.cpp)
+    asm_builder.cpp
+)
 
 add_executable(${PROJECT_NAME} ${SRC_FILE})
 

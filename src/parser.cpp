@@ -59,7 +59,6 @@ static std::map<std::string, Token> KeyWordTkMap = {
 
 
 Token TokenParser::getToken() {
-    
 
     /// jump '\n', ' ', '\r'
     while(isspace(LastChar)) {
@@ -67,10 +66,14 @@ Token TokenParser::getToken() {
     }
 
     if(LastChar == '#') {
-        do {
+        while (LastChar != EOF && LastChar != '\n') {
             getChar();
         }
-        while(LastChar != EOF && LastChar != '\n');
+        getChar();
+    }
+
+    /// jump '\n', ' ', '\r'
+    while(isspace(LastChar)) {
         getChar();
     }
 
@@ -125,6 +128,7 @@ Token TokenParser::getToken() {
     } 
 
     if (isdigit(LastChar)) {
+        IsSigned = true;
         std::string NumStr = "";
         bool isFloat = false;
 //        NumStr += LastChar;
@@ -138,6 +142,11 @@ Token TokenParser::getToken() {
         if(isFloat) {
             DoubleNumVal = strtod(NumStr.c_str(), nullptr);
             return tok_fnumber;
+        }
+
+        if(LastChar == 'U') {
+            getChar();
+            IsSigned = false;
         }
 
         IntNumVal = atol(NumStr.c_str());
@@ -487,7 +496,6 @@ DataDeclAST *GrammarParser::parseVarDef() {
 
         VariableAST *var = new VariableAST(line, Decl, TkParser->getIdStr());
         if(isConst) var->setIsConst();
-        var->setIsExtern();
         var->setDataType(type);
 
         NodeStack.push_back(var);
@@ -1105,7 +1113,6 @@ ExprAST *GrammarParser::parsePrimaryExpr() {
  
 }
 
-
 ExprAST *GrammarParser::parseIdRef()       {
 
     LineNo line = TkParser->getCurLineNo();
@@ -1197,7 +1204,9 @@ ExprAST *GrammarParser::parseConstExpr()   {
         }
         case tok_inumber:{
             getNextToken();
-            return new NumberExprAST(line, NodeStack.back(), TkParser->getIntVal());
+            NumberExprAST *number = new NumberExprAST(line, NodeStack.back(), TkParser->getIntVal());
+            number->setIsSigned(TkParser->isSigned());
+            return number;
         }
         case tok_fnumber:{
             getNextToken();
