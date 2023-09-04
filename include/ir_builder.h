@@ -22,6 +22,7 @@ private:
     llvm::IRBuilder<>   *TheIRBuilder;
     llvm::Function      *CurFunc;
     llvm::BasicBlock    *CurBblk;
+    FuncAST             *CurFuncAst;
     ProgramAST          *Prog;
     bool                 IsRootScope;
     bool                 IsNeedPointer = false;
@@ -57,22 +58,24 @@ protected:
 private:
     llvm::FunctionType *getFunctionTypeByFuncASTNode(FuncAST *);
     llvm::Type         *getLLVMType(DataTypeAST *);
+    llvm::Type         *kaleTypeToLLVMType(KType ty);
+    llvm::Constant     *createConstantValue(llvm::Type *ty);
+
     long                getConstIntByExpr(ExprAST *expr);
-    
     void                createAndSetCurrentFunc(const llvm::StringRef& name, llvm::FunctionType *ty);
     void                createAndSetCurrentBblk(const llvm::StringRef& name);
-    llvm::Constant     *createConstantValue(llvm::Type *ty);
     void                storeValueToPointer(llvm::Value *lv, llvm::Value *rv);
     void                typeConvert(llvm::Value *&lv, llvm::Value *&rv);
     void                convertToAimType(llvm::Type *t1);
     void                convertToI1();
-    llvm::Type         *kaleTypeToLLVMType(KType ty);
-
+    void                generateStdFuncCall(CallExprAST *node);
 private:
     static std::unordered_map<ProgramAST *, KaleIRBuilder *> ProgToIrBuilderMap;
-
+    static std::unordered_map<std::string, std::vector<KType>> StdKaleFuncTypeMap;
+    static std::unordered_map<std::string, llvm::FunctionType*> StdLLVMFuncTypeMap;
 public:
     static KaleIRBuilder *getOrCreateIrBuilderByProg(ProgramAST *prog);
+    static void initStdFunctionTypeMap();
 };
 
 }

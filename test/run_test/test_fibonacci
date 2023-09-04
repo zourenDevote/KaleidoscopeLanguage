@@ -1,0 +1,10 @@
+CHECK:Fibonacci(1) = 1
+CHECK:Fibonacci(2) = 1
+CHECK:Fibonacci(3) = 2
+CHECK:Fibonacci(4) = 3
+CHECK:Fibonacci(5) = 5
+CHECK:Fibonacci(6) = 8
+CHECK:Fibonacci(7) = 13
+CHECK:Fibonacci(8) = 21
+CHECK:Fibonacci(9) = 34
+CHECK:Fibonacci(10) = 55

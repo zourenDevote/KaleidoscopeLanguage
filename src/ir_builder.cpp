@@ -49,6 +49,8 @@ void KaleIRBuilder::visit(FuncAST *node) {
     }
     else {
         createAndSetCurrentFunc(node->getFuncName(), funcTy);
+        node->setLLVMFunction(CurFunc);
+        CurFuncAst = node;
         unsigned index = 0;
         for(auto *param : node->getParams()) {
             param->getId()->setLLVMValue(CurFunc->getArg(index++));            
@@ -57,6 +59,7 @@ void KaleIRBuilder::visit(FuncAST *node) {
         node->getBlockStmt()->accept(*this);
         CurBblk = nullptr;
         CurFunc = nullptr;
+        CurFuncAst = nullptr;
     }   
 }
 
@@ -72,16 +75,23 @@ void KaleIRBuilder::visit(StructDefAST *node) {
 void KaleIRBuilder::visit(VariableAST *node) {
     llvm::Type *ty = getLLVMType(node->getDataType());
     if(!node->getDims().empty()) {
-        long arraysize = 1;
         auto begin = node->getDims().rbegin();
-        auto end = node->getDims().rbegin();
+        auto end = node->getDims().rend();
         while(begin != end) {
-            arraysize *= getConstIntByExpr(*begin);
+            ty = ArrayType::get(ty, getConstIntByExpr(*begin));
             begin++;
         }
-        ty = llvm::ArrayType::get(ty, arraysize);
     }
     llvm::Value *value;
+    llvm::Constant *initValue;
+    if(node->getInitExpr()) {
+        node->getInitExpr()->accept(*this);
+        initValue = dyn_cast<llvm::Constant>(LastValue);
+        assert(initValue && "illegal init!");
+    }
+    else {
+        initValue = createConstantValue(ty);
+    }
     if(node->isExtern()) {
         /// extern variable
         value = TheModule->getOrInsertGlobal(node->getName(), ty);
@@ -89,7 +99,7 @@ void KaleIRBuilder::visit(VariableAST *node) {
     else if(node->getParent()->getParent()->getClassId() == ProgramId) {
         /// global variable, 暂时不初始化
         value = new llvm::GlobalVariable(*TheModule, ty, node->isConst(),
-            llvm::GlobalVariable::ExternalLinkage, createConstantValue(ty), node->getName());
+            llvm::GlobalVariable::ExternalLinkage, initValue, node->getName());
     }
     else {
         /// value
@@ -97,6 +107,7 @@ void KaleIRBuilder::visit(VariableAST *node) {
         TheIRBuilder->SetInsertPoint(&CurFunc->getEntryBlock());
         value = TheIRBuilder->CreateAlloca(ty, nullptr, node->getName());
         TheIRBuilder->SetInsertPoint(B);
+        TheIRBuilder->CreateStore(initValue, value);
     }
     node->setLLVMValue(value);
 }
@@ -104,6 +115,7 @@ void KaleIRBuilder::visit(VariableAST *node) {
 void KaleIRBuilder::visit(ReturnStmtAST *node) {
     if(node->getRetExpr()) {
         node->getRetExpr()->accept(*this);
+        convertToAimType(kaleTypeToLLVMType(CurFuncAst->getRetType()->getDataType()));
         TheIRBuilder->CreateRet(LastValue);
     }
     else {
@@ -114,17 +126,17 @@ void KaleIRBuilder::visit(ReturnStmtAST *node) {
 void KaleIRBuilder::visit(BreakStmtAST *node) {
     assert(!AfterStack.empty() && "break jump stack can not be empty!");
     TheIRBuilder->CreateBr(AfterStack.back());
-    llvm::BasicBlock *BreakAfter = llvm::BasicBlock::Create(GlobalContext, "break_next");
-    CurFunc->getBasicBlockList().push_back(BreakAfter);
-    TheIRBuilder->SetInsertPoint(BreakAfter);
+//    llvm::BasicBlock *BreakAfter = llvm::BasicBlock::Create(GlobalContext, "break_next");
+//    CurFunc->getBasicBlockList().push_back(BreakAfter);
+//    TheIRBuilder->SetInsertPoint(BreakAfter);
 }
 
 void KaleIRBuilder::visit(ContinueStmtAST *node) {
     assert(!CondStack.empty() && "break jump stack can not be empty!");
     TheIRBuilder->CreateBr(CondStack.back());
-    llvm::BasicBlock *ContinueAfter = llvm::BasicBlock::Create(GlobalContext, "continue_next");
-    CurFunc->getBasicBlockList().push_back(ContinueAfter);
-    TheIRBuilder->SetInsertPoint(ContinueAfter);
+//    llvm::BasicBlock *ContinueAfter = llvm::BasicBlock::Create(GlobalContext, "continue_next");
+//    CurFunc->getBasicBlockList().push_back(ContinueAfter);
+//    TheIRBuilder->SetInsertPoint(ContinueAfter);
 }
 
 void KaleIRBuilder::visit(ForStmtAST *node) {
@@ -150,7 +162,9 @@ void KaleIRBuilder::visit(ForStmtAST *node) {
     TheIRBuilder->SetInsertPoint(Body);
     node->getStatement()->accept(*this);
     if(node->getExpr3()) node->getExpr3()->accept(*this);
-    TheIRBuilder->CreateBr(Cond);
+    if(!CurFunc->getBasicBlockList().back().getTerminator()) {
+        TheIRBuilder->CreateBr(Cond);
+    }
     CurFunc->getBasicBlockList().push_back(After);
     TheIRBuilder->SetInsertPoint(After);
 
@@ -175,7 +189,9 @@ void KaleIRBuilder::visit(WhileStmtAST *node) {
     CurFunc->getBasicBlockList().push_back(Body);
     TheIRBuilder->SetInsertPoint(Body);
     node->getStatement()->accept(*this);
-    TheIRBuilder->CreateBr(Cond);
+    if(!CurFunc->getBasicBlockList().back().getTerminator()) {
+        TheIRBuilder->CreateBr(Cond);
+    }
     CurFunc->getBasicBlockList().push_back(After);
     TheIRBuilder->SetInsertPoint(After);
 
@@ -194,12 +210,16 @@ void KaleIRBuilder::visit(IfStmtAST *node) {
         CurFunc->getBasicBlockList().push_back(IfBody);
         TheIRBuilder->SetInsertPoint(IfBody);
         node->getStatement()->accept(*this);
-        TheIRBuilder->CreateBr(After);
+        if(!CurFunc->getBasicBlockList().back().getTerminator()) {
+            TheIRBuilder->CreateBr(After);
+        }
 
         CurFunc->getBasicBlockList().push_back(Else);
         TheIRBuilder->SetInsertPoint(Else);
         node->getElse()->accept(*this);
-        TheIRBuilder->CreateBr(After);
+        if(!CurFunc->getBasicBlockList().back().getTerminator()) {
+            TheIRBuilder->CreateBr(After);
+        }
 
         CurFunc->getBasicBlockList().push_back(After);
         TheIRBuilder->SetInsertPoint(After);
@@ -209,8 +229,10 @@ void KaleIRBuilder::visit(IfStmtAST *node) {
         CurFunc->getBasicBlockList().push_back(IfBody);
         TheIRBuilder->SetInsertPoint(IfBody);
         node->getStatement()->accept(*this);
+        if(!CurFunc->getBasicBlockList().back().getTerminator()) {
+            TheIRBuilder->CreateBr(After);
+        }
         CurFunc->getBasicBlockList().push_back(After);
-        TheIRBuilder->CreateBr(After);
         TheIRBuilder->SetInsertPoint(After);
     }
 }
@@ -349,26 +371,30 @@ void KaleIRBuilder::visit(UnaryExprAST *node) {
 }
 
 void KaleIRBuilder::visit(LiteralExprAST *node) {
-
+    llvm::Constant *initvalue = llvm::ConstantDataArray::get(GlobalContext, llvm::ArrayRef<char>(node->getStr().c_str(), node->getStr().size() + 1));
+    LastValue = new llvm::GlobalVariable(
+            *TheModule,
+            initvalue->getType(),
+            true,
+            llvm::GlobalVariable::PrivateLinkage,
+            initvalue,
+            "private_str"
+            );
+    LastValue = TheIRBuilder->CreateBitCast(LastValue, llvm::Type::getInt8PtrTy(GlobalContext));
 }
 
 void KaleIRBuilder::visit(NumberExprAST *node) {
 
     if(node->isLong()) {
         if(node->isSigned()) {
-            LastValue = ConstantInt::getSigned(KaleIRTypeSupport::KaleIntType, node->getIValue());
+            LastValue = ConstantInt::getSigned(KaleIRTypeSupport::KaleLongType, node->getIValue());
         }
         else {
             LastValue = ConstantInt::get(KaleIRTypeSupport::KaleULongType, node->getUIValue());
         }
     }
     else if(node->isChar()) {
-        if(node->isSigned()) {
-            LastValue = ConstantInt::getSigned(KaleIRTypeSupport::KaleCharType, node->getCValue());
-        }
-        else {
-            LastValue = ConstantInt::getSigned(KaleIRTypeSupport::KaleUCharType, node->getIValue());
-        }
+        LastValue = ConstantInt::getSigned(KaleIRTypeSupport::KaleCharType, node->getCValue());
     }
     else if(node->isBoolLiteral()) {
         LastValue = ConstantInt::get(KaleIRTypeSupport::KaleBoolType, node->getBoolValue());
@@ -386,28 +412,47 @@ void KaleIRBuilder::visit(IdRefAST *node) {
     }
     else {
         LastValue = node->getId()->getLLVMValue();
-        LastValue = TheIRBuilder->CreateLoad(LastValue);
+        if(LastValue->getType()->isPointerTy()) { LastValue = TheIRBuilder->CreateLoad(LastValue);}
     }
 }
 
 void KaleIRBuilder::visit(IdIndexedRefAST *node) {
-
+    std::vector<llvm::Value*> indexes = {KaleIRConstantValueSupport::KaleIntZero};
+    bool isNeed  = IsNeedPointer;
+    IsNeedPointer = false;
+    for(auto *idx : node->getIndexes()) {
+        idx->accept(*this);
+        convertToAimType(KaleIRTypeSupport::KaleUIntType);
+        indexes.push_back(LastValue);
+    }
+    IsNeedPointer = isNeed;
+    LastValue = TheIRBuilder->CreateInBoundsGEP(node->getLLVMValue(), indexes);
+    if(!IsNeedPointer) {
+        LastValue = TheIRBuilder->CreateLoad(LastValue);
+    }
 }
 
 void KaleIRBuilder::visit(CallExprAST *node) {
-    std::vector<llvm::Value *> args = {};
-    auto params = node->getFuncDef()->getParams();
-    auto paramargs = node->getArgs();
-    unsigned index = 0;
-    if(!params.empty()) {
-        for(auto param : params) {
-            paramargs[index]->accept(*this);
-            convertToAimType(kaleTypeToLLVMType(param->getId()->getDataType()->getDataType()));
-            args.push_back(LastValue);
-        }
+    if(node->isCallStd()) {
+        generateStdFuncCall(node);
+        return;
     }
-    auto callee = node->getLLVMFunction();
-    LastValue = TheIRBuilder->CreateCall(callee, args);
+    else {
+        std::vector<llvm::Value *> args = {};
+        auto params = node->getFuncDef()->getParams();
+        auto paramargs = node->getArgs();
+        unsigned index = 0;
+        if(!params.empty()) {
+            for(auto param : params) {
+                paramargs[index]->accept(*this);
+                convertToAimType(kaleTypeToLLVMType(param->getId()->getDataType()->getDataType()));
+                args.push_back(LastValue);
+                index++;
+            }
+        }
+        auto callee = node->getLLVMFunction();
+        LastValue = TheIRBuilder->CreateCall(callee, args);
+    }
 }
 
 llvm::FunctionType *KaleIRBuilder::getFunctionTypeByFuncASTNode(FuncAST *node) {
@@ -530,8 +575,24 @@ void KaleIRBuilder::createAndSetCurrentBblk(const llvm::StringRef& name) {
 }
 
 llvm::Constant *KaleIRBuilder::createConstantValue(llvm::Type *ty) {
-    llvm::Constant *constvalue = nullptr;
-    return constvalue;
+    if(ty->isIntegerTy()) {
+        return llvm::ConstantInt::get(ty, 0);
+    }
+    else if(ty->isFloatTy() || ty->isDoubleTy()) {
+        return llvm::ConstantFP::get(ty, 0.0);
+    }
+    else if(ty->isArrayTy()) {
+        auto arrTy = dyn_cast<ArrayType>(ty);
+        auto elemTy = arrTy->getElementType();
+        auto size = arrTy->getNumElements();
+        auto v = createConstantValue(elemTy);
+        std::vector<llvm::Constant *> inits;
+        for(int i = 0 ; i < size ; i++) {
+            inits.push_back(v);
+        }
+        return ConstantArray::get(arrTy, inits);
+    }
+    return nullptr;
 }
 
 void KaleIRBuilder::storeValueToPointer(llvm::Value *lv, llvm::Value *rv) {
@@ -616,6 +677,40 @@ void KaleIRBuilder::convertToAimType(llvm::Type *t1) {
 
 }
 
+void KaleIRBuilder::generateStdFuncCall(CallExprAST *node) {
+    std::vector<llvm::Value *> args = {};
+    assert(StdLLVMFuncTypeMap.find(node->getName()) != StdLLVMFuncTypeMap.end() && "not find this std function!");
+    auto func = TheModule->getOrInsertFunction(node->getName(), StdLLVMFuncTypeMap[node->getName()]);
+    if(node->getName() == "Print" || node->getName() == "PrintLn") {
+        for(auto arg : node->getArgs()) {
+            arg->accept(*this);
+            if(LastValue->getType()->isFloatTy()) {
+                LastValue = TheIRBuilder->CreateFPExt(LastValue, KaleIRTypeSupport::KaleDoubleType);
+            }
+            args.push_back(LastValue);
+        }
+        LastValue = TheIRBuilder->CreateCall(func, args);
+    }
+    else {
+        if(node->isArgEmpty()) LastValue = TheIRBuilder->CreateCall(func);
+        else {
+            auto params = StdKaleFuncTypeMap[node->getName()];
+            auto paramargs = node->getArgs();
+            unsigned index = 0;
+            if(!params.empty()) {
+                for(auto param : params) {
+                    paramargs[index]->accept(*this);
+                    convertToAimType(kaleTypeToLLVMType(param));
+                    args.push_back(LastValue);
+                    index++;
+                }
+            }
+            auto callee = node->getLLVMFunction();
+            LastValue = TheIRBuilder->CreateCall(callee, args);
+        }
+    }
+}
+
 void KaleIRBuilder::convertToI1() {
     if(!LastValue) {
         LastValue = llvm::ConstantInt::get(KaleIRTypeSupport::KaleBoolType, 1);
@@ -653,6 +748,21 @@ KaleIRBuilder *KaleIRBuilder::getOrCreateIrBuilderByProg(ProgramAST *prog) {
         return builder;
     }
     return ProgToIrBuilderMap[prog];
+}
+
+std::unordered_map<std::string, std::vector<KType>> KaleIRBuilder::StdKaleFuncTypeMap = {};
+std::unordered_map<std::string, llvm::FunctionType*> KaleIRBuilder::StdLLVMFuncTypeMap = {};
+
+void KaleIRBuilder::initStdFunctionTypeMap() {
+
+    llvm::FunctionType *ty;
+    ty = llvm::FunctionType::get(KaleIRTypeSupport::KaleIntType, {}, false);
+    StdLLVMFuncTypeMap.insert({"GetInt", ty});
+    ty = llvm::FunctionType::get(KaleIRTypeSupport::KaleDoubleType, {}, false);
+    StdLLVMFuncTypeMap.insert({"GetDouble", ty});
+    ty = llvm::FunctionType::get(KaleIRTypeSupport::KaleVoidType, {llvm::Type::getInt8PtrTy(GlobalContext)}, true);
+    StdLLVMFuncTypeMap.insert({"Print", ty});
+    StdLLVMFuncTypeMap.insert({"PrintLn", ty});
 }
 
 }

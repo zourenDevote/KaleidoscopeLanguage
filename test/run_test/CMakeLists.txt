@@ -2,6 +2,12 @@
 set(TestList
         hello_world
         test_for1
+        test_type
+        test_add
+        test_fibonacci
+        test_for_int
+        test_while_double
+        test_while_int
 )
 
 foreach (item ${TestList})

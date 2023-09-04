@@ -20,7 +20,7 @@ class TokenParser {
 private:
     LineNo LineInfo;    
     double DoubleNumVal;
-    long IntNumVal;
+    long long IntNumVal;
     std::string LiteralVal;
     std::string IdStr;
     int LastChar;
@@ -36,7 +36,7 @@ public:
 
     LineNo getCurLineNo() const { return LineInfo; }
     double getDoubleVal() const { return DoubleNumVal; }
-    long   getIntVal()    const { return IntNumVal; }
+    long long getIntVal()    const { return IntNumVal; }
     const std::string& getIdStr() const { return IdStr; }
     const std::string& getLiteral() const { return LiteralVal; }
     bool   isSigned() { return IsSigned; }

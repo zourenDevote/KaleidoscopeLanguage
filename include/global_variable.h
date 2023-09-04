@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <unordered_set>
 #include "ast.h"
 #include "llvm/IR/Module.h"
 
@@ -54,6 +55,8 @@ extern bool OnlyPrintAST;
 extern bool OnlyPrintIR;
 
 #endif
+
+extern std::unordered_set<std::string> StdFunctionSet;
 
 }
 

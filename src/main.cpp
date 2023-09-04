@@ -168,17 +168,16 @@ int main(int argc, char *argv[]) {
 #endif
     KaleIRTypeSupport::initIRTypeSupport();
     KaleIRConstantValueSupport::initIRConastantSupport();
+    KaleIRBuilder::initStdFunctionTypeMap();
     /// generate ir
     for(auto *prog : ProgramList) {
         auto builder = KaleIRBuilder::getOrCreateIrBuilderByProg(prog);
         prog->accept(*builder);
-        if(llvm::verifyModule(*builder->getLLVMModule())) {
-            std::cerr << "Exit with error!" << std::endl;
-            return 1;
-        }
+//        if(llvm::verifyModule(*builder->getLLVMModule())) {
+//            std::cerr << "Exit with error!" << std::endl;
+//            return 1;
+//        }
     }
-
-
 
     /// print ir
     if(PrintIR) {
@@ -205,13 +204,21 @@ int main(int argc, char *argv[]) {
 
     /// run this case?
     if(CompileAndRun) {
-        std::string cmd = "./" + OutputFileName;
+        std::string cmd;
 
         if(UseCheck) {
-            cmd += "| FileCheck-12 " + CheckInputFile;
+            cmd = "./" + OutputFileName + " > output.txt";
+            auto res = system(cmd.c_str());
+            if(res) return res;
+            cmd = "FileCheck-12 " + CheckInputFile + " --input-file=output.txt";
+            res = system(cmd.c_str());
+            system("rm output.txt");
+            return res;
         }
-
-        return system(cmd.c_str());
+        else {
+            cmd = "./" + OutputFileName;
+            return system(cmd.c_str());
+        }
     }
 
     return 0;

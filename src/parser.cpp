@@ -1,9 +1,11 @@
 
 #include "parser.h"
 #include "error.h"
+#include "cast.h"
 #include "global_variable.h"
 
 
+#include <iostream>
 #include <string>
 #include <cctype>
 #include <cstdlib>
@@ -112,7 +114,7 @@ Token TokenParser::getToken() {
 
 
     // identifier: [a-zA-Z][a-zA-Z0-9]*
-    if(isalpha(LastChar)) { 
+    if(isalpha(LastChar)) {
         IdStr = LastChar;
         getChar();
         while(isalnum((LastChar))) {
@@ -130,6 +132,7 @@ Token TokenParser::getToken() {
     if (isdigit(LastChar)) {
         IsSigned = true;
         std::string NumStr = "";
+
         bool isFloat = false;
 //        NumStr += LastChar;
         do {
@@ -149,7 +152,7 @@ Token TokenParser::getToken() {
             IsSigned = false;
         }
 
-        IntNumVal = atol(NumStr.c_str());
+        IntNumVal = atoll(NumStr.c_str());
         return tok_inumber;
     }
 
@@ -607,8 +610,11 @@ FuncAST *GrammarParser::parseFuncDef()     {
         auto *retTy = new DataTypeAST(*funcDef->getLineNo(), funcDef, Void);
         funcDef->setRetType(retTy);
     }
-    insertFunctionToFuncMap(funcDef);
-    funcDef->setBlockStmt(dynamic_cast<BlockStmtAST*>(parseBlockStmt()));
+    if(!insertFunctionToFuncMap(funcDef)) {
+        std::cerr << "Redefine this function '" << funcDef->getFuncName() << "'" << std::endl;
+        exit(-1);
+    }
+    funcDef->setBlockStmt(parseBlockStmt());
     NodeStack.pop_back();
     return funcDef;
 }
@@ -674,7 +680,7 @@ ParamAST *GrammarParser::parseParamDecl()   {
 }
 
 
-StatementAST *GrammarParser::parseStmt()        {
+StatementAST *GrammarParser::parseStmt() {
 
     int tk = TkParser->lookUp(1)[0];
     switch(tk) {
@@ -871,7 +877,7 @@ ReturnStmtAST *GrammarParser::parseReturnStmt()  {
 
     NodeStack.push_back(returnStmt);
     if(TkParser->lookUp(1)[0] != ';') {
-        returnStmt->setRetExpr(dynamic_cast<ExprAST*>(parseExpr()));
+        returnStmt->setRetExpr(parseExpr());
     }
     NodeStack.pop_back();
     
@@ -1164,7 +1170,13 @@ ExprAST *GrammarParser::parseCallExpr()    {
         callExpr->setFunction(func);
     }
     else {
-        LOG_ERROR("not define or declare this function", line)
+        // is call std function
+        if(StdFunctionSet.find(callExpr->getName()) != StdFunctionSet.end()) {
+            callExpr->setIsCallStd(true);
+        }
+        else {
+            LOG_ERROR("not define or declare this function", line)
+        }
     }
     NodeStack.push_back(callExpr);
     // eat '('
@@ -1283,8 +1295,11 @@ VariableAST *GrammarParser::getVariableNodeFromOtherGlobalMap(const std::string&
 }
 
 bool GrammarParser::insertFunctionToFuncMap(FuncAST *node) {
-    if(FuncAST *func = getFuncASTNode(node->getFuncName()))
+    if(StdFunctionSet.find(node->getFuncName()) != StdFunctionSet.end()) return false;
+    if(FuncAST *func = getFuncASTNode(node->getFuncName())) {
+        if(func->isFuncDeclare()) return true;
         return false;
+    }
     FuncDefMap.insert({node->getFuncName(), node});
     return true;
 }

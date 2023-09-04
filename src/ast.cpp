@@ -192,7 +192,7 @@ NumberExprAST::NumberExprAST(const LineNo &lineNo, ASTBase *parent, char v) : Ex
     this->IsChar = true;
 }
 
-NumberExprAST::NumberExprAST(const LineNo &lineNo, ASTBase *parent, long v) : ExprAST(lineNo, parent) {
+NumberExprAST::NumberExprAST(const LineNo &lineNo, ASTBase *parent, long long v) : ExprAST(lineNo, parent) {
     this->LValue = v;
     this->IsLong = true;
 }
@@ -224,6 +224,7 @@ IdIndexedRefAST::IdIndexedRefAST(const LineNo &lineNo, ASTBase *parent, const st
 /// CallExprAST define code
 CallExprAST::CallExprAST(const LineNo &lineNo, ASTBase *parent, const std::string& name) : ExprAST(lineNo, parent), FuncName(name){
     TheCallFunction = nullptr;
+    IsCallStd = false;
 }
 
 llvm::Function *CallExprAST::getLLVMFunction() {
