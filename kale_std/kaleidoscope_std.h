@@ -8,11 +8,11 @@ int GetInt();
 double GetDouble();
 
 /// @brief kaleidoscope 标准库函数 打印整型变量，打印浮点变量，换行, 空格
-void PutInt(int);
-void PutDouble(double);
-void NewLine();
-void Space();
-void PutChar(int);
+
+void Print(const char *s, ...);
+void PrintLn(const char *s, ...);
+
+
 #endif
 
 

@@ -1,6 +1,7 @@
 
 #include "global_variable.h"
 #include "llvm/IR/Module.h"
+#include <unordered_set>
 
 namespace kale {
 
@@ -45,6 +46,14 @@ bool TokenParserTestFlag = false;
 bool OnlyParse = false;
 bool OnlyPrintIR = false;
 bool OnlyPrintAST = false;
+
+/// T ==> Std Function map
+std::unordered_set<std::string> StdFunctionSet = {
+        "Print",
+        "PrintLn",
+        "GetInt",
+        "GetDouble",
+};
 
 #endif
 

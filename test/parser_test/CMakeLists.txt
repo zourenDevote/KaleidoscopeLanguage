@@ -5,7 +5,8 @@ set(TestList
         test_for_double
         test_for_int
         test_for1
-        test_if
+        test_add
+        test_type
         test_while_double
         test_while_int
 )

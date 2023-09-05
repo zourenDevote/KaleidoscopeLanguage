@@ -337,7 +337,6 @@ private:
     unsigned VarFlag;                       // the flag that record the variable message
     std::vector<ExprAST *> Dims;            // the dimensions record of the variable
     ExprAST *InitExpr = nullptr;            // the init expr of the variable
-
 public:
     INSERT_ACCEPT
 };
@@ -674,7 +673,7 @@ private:
 
     char    CValue;
     bool    BValue;
-    long    LValue;
+    long long    LValue;
     double  DValue;
 
 public:
@@ -683,7 +682,7 @@ public:
 
 public: 
     explicit NumberExprAST(const LineNo&, ASTBase*, char);
-    explicit NumberExprAST(const LineNo&, ASTBase*, long);
+    explicit NumberExprAST(const LineNo&, ASTBase*, long long);
     explicit NumberExprAST(const LineNo&, ASTBase*, double);
     explicit NumberExprAST(const LineNo&, ASTBase*, bool);
 
@@ -695,8 +694,8 @@ public:
     bool            isChar          () { return IsChar; }
     bool            isSigned        () { return IsSigned; }
     char            getCValue    () { return CValue; }
-    long            getIValue    () { return LValue; }
-    unsigned long   getUIValue   () { return (unsigned long)LValue; }
+    long long          getIValue    () { return LValue; }
+    unsigned long long   getUIValue   () { return (unsigned long long)LValue; }
     double          getFValue  () { return DValue; }
     bool            getBoolValue    () { return BValue; }
 
@@ -768,6 +767,7 @@ private:
     FuncAST               *TheCallFunction = nullptr;          // 对应的FuncAST的定义
     const std::string      FuncName;                           // 函数名
     std::vector<ExprAST *> Args;
+    bool                   IsCallStd;                          // flag to call std function
 public:
     explicit CallExprAST(const LineNo&, ASTBase*, const std::string&);
 
@@ -777,10 +777,12 @@ public:
 
     void setFunction    (FuncAST *func)     { this->TheCallFunction = func; }
     void addArg         (ExprAST *arg)      { Args.push_back(arg); }
+    void setIsCallStd   (bool flag)         { IsCallStd = flag; }
 
     const std::vector<ExprAST*> &getArgs()          const    { return this->Args; }
     const std::string           &getName()          const    { return this->FuncName; }
     bool                         isArgEmpty()       const    { return this->Args.empty(); }
+    bool                         isCallStd()        const    { return this->IsCallStd; }
     llvm::Function              *getLLVMFunction();
     FuncAST                     *getFuncDef()                { return TheCallFunction; }
 

@@ -1,6 +1,7 @@
 
 #include "kaleidoscope_std.h"
 #include <stdio.h>
+#include <stdarg.h>
 
 /// @brief kaleidoscope 标准库函数 获取整型变量，获取浮点变量
 /// @return 
@@ -17,24 +18,18 @@ double GetDouble() {
 }
 
 /// @brief kaleidoscope 标准库函数 打印整型变量，打印浮点变量，换行, 空格
-void PutInt(int v) {
-    printf("%d", v);
+void Print(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
 }
 
-void PutDouble(double v) {
-    printf("%f", v);
-}
-
-void NewLine() {
+void PrintLn(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
     printf("\n");
-}
-
-void Space() {
-    printf(" ");
-}
-
-void PutChar(int v) {
-    char c = (char)v;
-    printf("%c", c);
 }
 
