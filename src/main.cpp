@@ -1,6 +1,7 @@
 
 
 #include "global_variable.h"
+#include "type_checker.h"
 #include "ir_support.h"
 #include "asm_builder.h"
 #include "pre_analysis.h"
@@ -166,6 +167,12 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 #endif
+
+    TypeChecker checker;
+    for(auto *prog : ProgramList) {
+        prog->accept(checker);
+    }
+
     KaleIRTypeSupport::initIRTypeSupport();
     KaleIRConstantValueSupport::initIRConastantSupport();
     KaleIRBuilder::initStdFunctionTypeMap();
@@ -210,7 +217,7 @@ int main(int argc, char *argv[]) {
             cmd = "./" + OutputFileName + " > output.txt";
             auto res = system(cmd.c_str());
             if(res) return res;
-            cmd = "FileCheck-12 " + CheckInputFile + " --input-file=output.txt";
+            cmd = "FileCheck-15 " + CheckInputFile + " --input-file=output.txt";
             res = system(cmd.c_str());
             system("rm output.txt");
             return res;

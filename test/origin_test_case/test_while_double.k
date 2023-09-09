@@ -7,14 +7,15 @@ def main() : int {
     sum = 0.0;
     i = 0;
     while (i < 10) {
-        globalArray[i] = sum + i;
+        sum = sum + i;
+        globalArray[i] = sum;
         i = i + 1;
     }
 
-    i = 10;
-    while (i > 0) {
-        i = i - 1;
+    i = 9;
+    while (i >= 0) {
         Print("%f ", globalArray[i]);
+        i = i - 1;
     }
     PrintLn("");
 

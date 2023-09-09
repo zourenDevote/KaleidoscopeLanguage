@@ -1,0 +1,18 @@
+Start testing: Sep 07 23:17 CST
+----------------------------------------------------------
+16/19 Testing: test_for_int_run_test
+16/19 Test: test_for_int_run_test
+Command: "/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/bin/kalecc" "-i" "/mnt/d/ClionProject/KaleidoscopeLanguage/test/origin_test_case/test_for_int.k" "-r" "-o" "test_for_int" "--check-input" "/mnt/d/ClionProject/KaleidoscopeLanguage/test/run_test/test_for_int"
+Directory: /mnt/d/ClionProject/KaleidoscopeLanguage/build_release/test/run_test
+"test_for_int_run_test" start time: Sep 07 23:17 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Failed.
+"test_for_int_run_test" end time: Sep 07 23:17 CST
+"test_for_int_run_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Sep 07 23:17 CST

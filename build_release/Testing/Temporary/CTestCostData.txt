@@ -1,0 +1,21 @@
+token_parser_test 7 0.0138654
+hello_world_parser_test 7 0.00870087
+test_fibonacci_parser_test 7 0.0105652
+test_for_double_parser_test 7 0.00788238
+test_for_int_parser_test 7 0.0100551
+test_for1_parser_test 7 0.0118942
+test_add_parser_test 7 0.00833299
+test_type_parser_test 7 0.00967111
+test_while_double_parser_test 7 0.00905328
+test_while_int_parser_test 7 0.00929641
+hello_world_run_test 7 0.0626355
+test_for1_run_test 7 0.0555062
+test_type_run_test 7 0.0629934
+test_add_run_test 7 0.0586301
+test_fibonacci_run_test 7 0.0706721
+test_for_int_run_test 0 0
+test_while_double_run_test 0 0
+test_while_int_run_test 0 0
+test_for_double_run_test 0 0
+---
+test_for_int_run_test

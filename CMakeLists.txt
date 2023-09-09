@@ -44,6 +44,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if(ENABLE_CTEST)
     message(STATUS "Enable ctest")
     add_compile_definitions(__CTEST_ENABLE__)
+    set(CTEST_TEST_TIMEOUT 300)
     enable_testing()
 endif()
 

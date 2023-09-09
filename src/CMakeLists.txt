@@ -1,7 +1,7 @@
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(LLVM 12 REQUIRED CONFIG)
+find_package(LLVM 15 REQUIRED CONFIG)
 
 #set(ARCHS
 #    AArch64
@@ -57,6 +57,7 @@ set(SRC_FILE
     test/token_parser_test.cpp 
     main.cpp
     asm_builder.cpp
+    type_checker.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SRC_FILE})

@@ -1,0 +1,14 @@
+C:\windows\system32\wsl.exe --distribution Ubuntu --exec /bin/bash -c "export CMAKE_COLOR_DIAGNOSTICS=ON && export CLION_IDE=TRUE && export JETBRAINS_IDE=TRUE && cd /mnt/d/ClionProject/KaleidoscopeLanguage/build_release && /usr/bin/cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CTEST=On -G 'CodeBlocks - Unix Makefiles' -S /mnt/d/ClionProject/KaleidoscopeLanguage -B /mnt/d/ClionProject/KaleidoscopeLanguage/build_release"
+Directory bin created successfully
+Directory lib created successfully
+Ubuntu LLVM version 12.0.1
+  
+  Optimized build.
+  Default target: x86_64-pc-linux-gnu
+  Host CPU: tigerlake
+Directory lib created successfully
+-- Enable ctest
+-- LLVMAnalysisLLVMCoreLLVMSupport
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /mnt/d/ClionProject/KaleidoscopeLanguage/build_release

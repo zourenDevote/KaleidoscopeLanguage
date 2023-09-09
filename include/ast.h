@@ -286,14 +286,16 @@ public:
     const char  *getName    ()  { return Name.c_str(); }
 
     void setLLVMValue(llvm::Value *v) { Value = v; }
-    llvm::Value *getLLVMValue()       { return Value; }
-
+    void setLLVMType(llvm::Type *ty) { VarLLVMType = ty; }
+    llvm::Value *getLLVMValue() { return Value; }
+    llvm::Type  *getVarLLVMType() { return VarLLVMType; }
 private:
     DataTypeAST *DataType;
     std::string Name;
 
     /// llvm
     llvm::Value *Value = nullptr;
+    llvm::Type* VarLLVMType = nullptr;
 };
 
 
@@ -316,6 +318,7 @@ public:
     void setIsPrivate   ()      { VarFlag = (VarFlag & 0xFFFFFFE3) | 0x8; }
     void setIsPublic    ()      { VarFlag = (VarFlag & 0xFFFFFFE3) | 0x10; }
     void setIsExtern    ()      { VarFlag = (VarFlag & 0xFFFFFFDF) | 0x20; }
+
 
     bool isStatic       ()      { return VarFlag & 0x1; }
     bool isConst        ()      { return VarFlag & 0x2; }
@@ -543,9 +546,12 @@ public:
 
 public:
     void setExprType(KType ty) { ExprType = ty; }
+    void setIsSigned(bool sign) { IsSigned = sign; }
     KType getExprType() { return ExprType; }
+    bool  isSign() { return IsSigned; }
 private:
     KType ExprType;
+    bool  IsSigned;
 };
 
 /// ------------------------------------------------------------------------
@@ -738,7 +744,7 @@ class IdIndexedRefAST : public ExprAST {
 private:
     std::vector<ExprAST*>  Indexes;             // indexes list
     const std::string      IdName;              // var name
-    IdDefAST             *Id;                   // define id
+    IdDefAST              *Id;                  // define id
 public:
     explicit IdIndexedRefAST(const LineNo&, ASTBase*, const std::string&);
 
@@ -747,7 +753,7 @@ public:
     static bool canCastTo(KAstId id) { return (id == IdIndexedRefId || ExprAST::canCastTo(id)); }
 
 public:
-    void addIndex   (ExprAST *expr)     { Indexes.push_back(expr); }
+    void addIndex(ExprAST *expr)     { Indexes.push_back(expr); }
     void setId(IdDefAST *id) { Id = id; }
 
     Value                        *getLLVMValue()      { Id->getLLVMValue(); }

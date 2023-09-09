@@ -64,7 +64,7 @@ private:
     long                getConstIntByExpr(ExprAST *expr);
     void                createAndSetCurrentFunc(const llvm::StringRef& name, llvm::FunctionType *ty);
     void                createAndSetCurrentBblk(const llvm::StringRef& name);
-    void                storeValueToPointer(llvm::Value *lv, llvm::Value *rv);
+    void                storeValueToPointer(llvm::Type *ty, llvm::Value *lv, llvm::Value *rv);
     void                typeConvert(llvm::Value *&lv, llvm::Value *&rv);
     void                convertToAimType(llvm::Type *t1);
     void                convertToI1();
