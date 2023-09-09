@@ -19,7 +19,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-15
+          sudo apt-get install -y llvm-15 clang-15
           sudo apt-get install build-essential
           sudo apt-get install cmake
 
@@ -49,7 +49,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y llvm-15
+          sudo apt-get install -y llvm-15 clang-15
           sudo apt-get install build-essential
           sudo apt-get install cmake
 
