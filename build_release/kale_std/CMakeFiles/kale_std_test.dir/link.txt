@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG CMakeFiles/kale_std_test.dir/test.c.o -o ../bin/kale_std_test  ../lib/libkale_std.a 

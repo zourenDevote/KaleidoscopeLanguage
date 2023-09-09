@@ -111,7 +111,7 @@ namespace kale {
             dest.close();
         }
 
-        std::string cmd = "clang++-12 ";
+        std::string cmd = "clang++-15 ";
         cmd += "-L" + Rpath + "/../lib ";
         for(auto &file : ObjFileList) {
             cmd += file + " ";

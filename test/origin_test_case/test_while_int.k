@@ -11,9 +11,9 @@ def main() : int {
         i = i + 1;
     }
 
-    i = 10;
-    while (i > 0) {
-        Print("%d ", globalArray[i-1]);
+    i = 9;
+    while (i >= 0) {
+        Print("%d ", globalArray[i]);
         i = i - 1;
     }
     PrintLn("");

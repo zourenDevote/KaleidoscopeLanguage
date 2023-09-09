@@ -1,0 +1,206 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Release-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "kale_std",
+					"jsonFile" : "directory-kale_std-Release-3228d07a50efccd92d6d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "kale_std",
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				},
+				{
+					"build" : "src",
+					"jsonFile" : "directory-src-Release-b6cf2213fc5053b67c22.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						4,
+						5
+					]
+				},
+				{
+					"build" : "test",
+					"childIndexes" : 
+					[
+						4,
+						5,
+						6
+					],
+					"jsonFile" : "directory-test-Release-451c0598f41488bb20b9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test"
+				},
+				{
+					"build" : "test/token_test",
+					"jsonFile" : "directory-test.token_test-Release-81c32982013566c92dfc.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "test/token_test"
+				},
+				{
+					"build" : "test/parser_test",
+					"jsonFile" : "directory-test.parser_test-Release-d96de1c4086de9c46b4b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "test/parser_test"
+				},
+				{
+					"build" : "test/run_test",
+					"jsonFile" : "directory-test.run_test-Release-a0472995b449b47d3568.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"parentIndex" : 3,
+					"projectIndex" : 0,
+					"source" : "test/run_test"
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						2,
+						3,
+						4,
+						5,
+						6
+					],
+					"name" : "kalecc",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						4,
+						5
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "kale_std",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "acc_gen::@145eef247bfb46b6828c",
+					"jsonFile" : "target-acc_gen-Release-d4efddb0fa61df83f352.json",
+					"name" : "acc_gen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "intrinsics_gen::@145eef247bfb46b6828c",
+					"jsonFile" : "target-intrinsics_gen-Release-875570e19ebaa3dba40d.json",
+					"name" : "intrinsics_gen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "kale_std::@d5cbd321a7bac551e911",
+					"jsonFile" : "target-kale_std-Release-b84eb7fe080d2e7598fa.json",
+					"name" : "kale_std",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "kale_std_test::@d5cbd321a7bac551e911",
+					"jsonFile" : "target-kale_std_test-Release-264b53b5be9e7e74b6a0.json",
+					"name" : "kale_std_test",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "kalecc::@145eef247bfb46b6828c",
+					"jsonFile" : "target-kalecc-Release-92301ee13d6f474c29f5.json",
+					"name" : "kalecc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "omp_gen::@145eef247bfb46b6828c",
+					"jsonFile" : "target-omp_gen-Release-555235ba2559f379748b.json",
+					"name" : "omp_gen",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/mnt/d/ClionProject/KaleidoscopeLanguage/build_release",
+		"source" : "/mnt/d/ClionProject/KaleidoscopeLanguage"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

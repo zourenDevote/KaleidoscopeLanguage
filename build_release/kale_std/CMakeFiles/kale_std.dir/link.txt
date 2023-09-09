@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib/libkale_std.a CMakeFiles/kale_std.dir/kaleidoscope_std.c.o
+/usr/bin/ranlib ../lib/libkale_std.a

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="kale_std"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\kale_std\;CMake Files\src\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\usr\lib\llvm-15\;CMake Files\..\..\..\..\usr\lib\llvm-15\cmake\;CMake Files\..\..\..\..\usr\lib\llvm-15\lib\;CMake Files\..\..\..\..\usr\lib\llvm-15\lib\cmake\;CMake Files\..\..\..\..\usr\lib\llvm-15\lib\cmake\llvm\;CMake Files\test\;CMake Files\test\token_test\;CMake Files\test\parser_test\;CMake Files\test\run_test\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kale_std">
+				<Option output="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/lib/libkale_std.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D__CTEST_ENABLE__"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 kale_std"/>
+					<CompileFile command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kale_std/fast">
+				<Option output="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/lib/libkale_std.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D__CTEST_ENABLE__"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 kale_std/fast"/>
+					<CompileFile command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kale_std_test">
+				<Option output="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/bin/kale_std_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D__CTEST_ENABLE__"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 kale_std_test"/>
+					<CompileFile command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="kale_std_test/fast">
+				<Option output="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/bin/kale_std_test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/bin"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D__CTEST_ENABLE__"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 kale_std_test/fast"/>
+					<CompileFile command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/gmake -f &quot;/mnt/d/ClionProject/KaleidoscopeLanguage/build_release/kale_std/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/kale_std/kaleidoscope_std.c">
+			<Option target="kale_std"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/kale_std/kaleidoscope_std.h">
+			<Option target="kale_std"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/kale_std/test.c">
+			<Option target="kale_std_test"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/kale_std/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\kale_std\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/src/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\src\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/cmake/FindFFI.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\cmake\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/cmake/FindTerminfo.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\cmake\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/cmake/LLVMConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\cmake\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/cmake/LLVMConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\cmake\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/lib/cmake/llvm/LLVM-Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\lib\cmake\llvm\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/lib/cmake/llvm/LLVMExports-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\lib\cmake\llvm\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/../../../../usr/lib/llvm-15/lib/cmake/llvm/LLVMExports.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\llvm-15\lib\cmake\llvm\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/test/token_test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\token_test\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/test/parser_test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\parser_test\"/>
+		</Unit>
+		<Unit filename="/mnt/d/ClionProject/KaleidoscopeLanguage/test/run_test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\run_test\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
