@@ -1,0 +1,3 @@
+[submodule "third_party/cibe"]
+	path = third_party/cibe
+	url = https://github.com/zourenDevote/CIBE.git
