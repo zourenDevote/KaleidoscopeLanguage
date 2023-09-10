@@ -227,12 +227,14 @@ CallExprAST::CallExprAST(const LineNo &lineNo, ASTBase *parent, const std::strin
     IsCallStd = false;
 }
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
 llvm::Function *CallExprAST::getLLVMFunction() {
     if(TheCallFunction) {
         return TheCallFunction->getLLVMFunction();
     }
     return nullptr;
 }
+#endif
 /// ----------------------------------------------------------
 
 }

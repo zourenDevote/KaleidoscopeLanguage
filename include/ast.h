@@ -6,14 +6,19 @@
 // clang-format off
 
 #include "common.h"
+
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Type.h"
+#endif
 
 #include <vector>
+#include <string>
 
-
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
 using namespace llvm;
+#endif
 
 namespace kale {
 
@@ -56,8 +61,7 @@ public:
    void setProgram(ProgramAST *prog);
 
    virtual ASTBase* deepCopy() { return nullptr; }
-    
-   ASTBase     *getChild(unsigned int index);
+
    LineNo      *getLineNo()    { return &LineMsg; }
    ASTBase     *getParent()    { return Parent; }
    ProgramAST  *getProgram()   { return Program; }
@@ -167,7 +171,9 @@ public:
 class FuncAST : public ASTBase {
 private:
     using ParamIter = std::vector<ParamAST *>::iterator;
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     Function                *LLVMFunc;        //
+#endif
     std::string              FuncName;        // 函数名
     std::vector<ParamAST *>  FuncParams;      // 函数参数列表
     DataTypeAST             *RetType;         // 返回值类型
@@ -180,14 +186,19 @@ public:
 public:
     explicit FuncAST(const LineNo&, ASTBase*, const std::string&);
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     void setLLVMFunction(Function *func)            { LLVMFunc = func; }
+#endif
     void setFuncName    (const std::string& name)   { FuncName = name; }
     void setRetType     (DataTypeAST *type)         { RetType = type; }
     void addFuncParam   (ParamAST *param)           { FuncParams.push_back(param); }
     void setBlockStmt   (BlockStmtAST *stmt)        { BlockStmt = stmt; }
 
     BlockStmtAST                    *getBlockStmt   () { return BlockStmt; }
+
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     Function                        *getLLVMFunction() { return LLVMFunc; }
+#endif
     const std::string               &getFuncName    () { return FuncName; }
     const std::vector<ParamAST *>   &getParams      () { return FuncParams; }
     DataTypeAST                     *getRetType     () { return RetType; }
@@ -285,17 +296,21 @@ public:
     DataTypeAST *getDataType()  { return DataType; }
     const char  *getName    ()  { return Name.c_str(); }
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     void setLLVMValue(llvm::Value *v) { Value = v; }
     void setLLVMType(llvm::Type *ty) { VarLLVMType = ty; }
     llvm::Value *getLLVMValue() { return Value; }
     llvm::Type  *getVarLLVMType() { return VarLLVMType; }
+#endif
 private:
     DataTypeAST *DataType;
     std::string Name;
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     /// llvm
     llvm::Value *Value = nullptr;
     llvm::Type* VarLLVMType = nullptr;
+#endif
 };
 
 
@@ -728,7 +743,9 @@ public:
 public:
     void setId(IdDefAST *id) { Id = id; }
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     Value       *getLLVMValue()       { Id->getLLVMValue(); }
+#endif
     IdDefAST    *getId()              { return Id; }
     std::string  getIdName()    const { return IdName; }
 
@@ -756,7 +773,9 @@ public:
     void addIndex(ExprAST *expr)     { Indexes.push_back(expr); }
     void setId(IdDefAST *id) { Id = id; }
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     Value                        *getLLVMValue()      { Id->getLLVMValue(); }
+#endif
     IdDefAST                     *getId()             { return Id; }
     const std::vector<ExprAST*>  &getIndexes()  const { return Indexes; }
     std::string                   getIdName()   const { return IdName; }
@@ -789,7 +808,10 @@ public:
     const std::string           &getName()          const    { return this->FuncName; }
     bool                         isArgEmpty()       const    { return this->Args.empty(); }
     bool                         isCallStd()        const    { return this->IsCallStd; }
+
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     llvm::Function              *getLLVMFunction();
+#endif
     FuncAST                     *getFuncDef()                { return TheCallFunction; }
 
 public:

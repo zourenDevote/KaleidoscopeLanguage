@@ -1,14 +1,17 @@
 
 
 #include "global_variable.h"
-#include "type_checker.h"
-#include "ir_support.h"
 #include "asm_builder.h"
 #include "pre_analysis.h"
 #include "ast_dumper.h"
-#include "ir_builder.h"
 #include "cxxopts.hpp"
 #include "parser.h"
+
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
+#include "ir_builder.h"
+#include "type_checker.h"
+#include "ir_support.h"
+#endif
 
 #ifdef __CTEST_ENABLE__
 #include "test/test.h"
@@ -40,20 +43,25 @@ int parseCmdArgs(int argc, char *argv[]) {
             .set_tab_expansion()
             .add_options()
             ("i, input", "The sources input file", cxxopts::value<std::vector<std::string>>())
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
             ("print-ir", "Print ir generation message", cxxopts::value<bool>()->default_value("false"))
+            ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
+            ("use-llvm-tool-chain", "Use llvm tool chain", cxxopts::value<bool>()->default_value("true"))
+#endif
             ("print-ast", "Print ast of source file", cxxopts::value<bool>()->default_value("false"))
             ("o, output", "Output file name", cxxopts::value<std::string>()->default_value("a.out"))
             ("h, help", "Print help")
             ("j", "Mult thread compile", cxxopts::value<int>()->default_value("1"))
-            ("serialize-ir", "Dump ir to file", cxxopts::value<bool>()->default_value("false"))
             ("r, run", "Compile and run", cxxopts::value<bool>()->default_value("false"))
-            ("use-llvm-tool-chain", "Use llvm tool chain", cxxopts::value<bool>()->default_value("true"))
+
             ("O, optimize-level", "Optimize level", cxxopts::value<unsigned>()->default_value("0"))
             ("check-input", "The Check input file", cxxopts::value<std::string>());
 #ifdef __CTEST_ENABLE__
         options.add_options()("token_test", "Test token parser", cxxopts::value<bool>()->default_value("false"))
         ("only-print-ast", "Only print ast", cxxopts::value<bool>()->default_value("false"))
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
         ("only-print-ir", "Only print ir", cxxopts::value<bool>()->default_value("false"))
+#endif
         ("only-parse", "Only parse", cxxopts::value<bool>()->default_value("false"));
 #endif
     
@@ -74,11 +82,12 @@ int parseCmdArgs(int argc, char *argv[]) {
         }
 
         PrintAST = result["print-ast"].as<bool>();
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
         PrintIR = result["print-ir"].as<bool>();
         DumpIRToLL = result["serialize-ir"].as<bool>();
-        CompileAndRun = result["run"].as<bool>();
         UseLLVMToolChainFlag = result["use-llvm-tool-chain"].as<bool>();
-
+#endif
+        CompileAndRun = result["run"].as<bool>();
 
         ThreadCount = result["j"].as<int>();
         if(ThreadCount > 1) {
@@ -101,7 +110,9 @@ int parseCmdArgs(int argc, char *argv[]) {
 
 #ifdef __CTEST_ENABLE__
         TokenParserTestFlag = result["token_test"].as<bool>();
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
         OnlyPrintIR = result["only-print-ir"].as<bool>();
+#endif
         OnlyPrintAST = result["only-print-ast"].as<bool>();
         OnlyParse = result["only-parse"].as<bool>();
 #endif
@@ -168,6 +179,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     TypeChecker checker;
     for(auto *prog : ProgramList) {
         prog->accept(checker);
@@ -204,7 +216,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
     /// compile ir to executable file
-   if(LLVMBuilderChain(argv[0]).runAndCompileToExecutable()) {
+    if(LLVMBuilderChain(argv[0]).runAndCompileToExecutable()) {
         std::cerr << "Exit with error!";
         return 1;
     }
@@ -227,6 +239,9 @@ int main(int argc, char *argv[]) {
             return system(cmd.c_str());
         }
     }
+#else
+    // 翻译成C代码然后编译成可执行文件
+#endif
 
     return 0;
 }
