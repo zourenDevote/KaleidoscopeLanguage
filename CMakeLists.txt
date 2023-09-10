@@ -2,7 +2,10 @@ project(kalecc)
 
 cmake_minimum_required(VERSION 3.10)
 
+# How to enable: -DENABLE_CTEST=On
 option(ENABLE_CTEST "Ctest option" OFF)
+# How to enable: -DBUILD_WITH_CMODEL=On
+option(BUILD_WITH_CMODEL "Translation kale to c code and compile it to executable file" OFF)
 
 # 调用命令创建目录
 execute_process(
@@ -46,6 +49,11 @@ if(ENABLE_CTEST)
     add_compile_definitions(__CTEST_ENABLE__)
     set(CTEST_TEST_TIMEOUT 300)
     enable_testing()
+endif()
+
+if(BUILD_WITH_CMODEL)
+    message(STATUS "Use c module translation method.")
+    add_compile_definitions(__USE_C_MODULE_TRANSLATION_METHOD__)
 endif()
 
 add_subdirectory(kale_std)

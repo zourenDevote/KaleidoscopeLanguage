@@ -107,7 +107,7 @@ enum KaleOptLevel {
 
 #define INSERT_ACCEPT void accept(AstVisitor &v) override; 
 #define INSERT_ENUM(X) KAstId getClassId() override { return X; } \
-                       static KAstId classId() { return X; } 
+                       static KAstId classId() { return X; }
 
 #define ADD_VISITOR_OVERRIDE(X) void visit(X *node) override;
 

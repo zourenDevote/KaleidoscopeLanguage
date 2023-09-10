@@ -2,12 +2,17 @@
 // Created by 20580 on 2023/8/28.
 //
 #include "asm_builder.h"
-#include "ir_builder.h"
+
 #include "global_variable.h"
-//#include "llvm/IR/LegacyPassManager.h"
+
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
+#include "ir_builder.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FileSystem.h"
+#endif
+
+//#include "llvm/IR/LegacyPassManager.h"
 //#include "llvm/Support/ThreadPool.h"
 //#include "llvm/Support/Host.h"
 //#include "llvm/Support/TargetRegistry.h"
@@ -55,6 +60,7 @@ namespace kale {
         TargetCPU = X86_64;
     }
 
+#ifndef __USE_C_MODULE_TRANSLATION_METHOD__
     LLVMBuilderChain::LLVMBuilderChain(const std::string& rpath) : AsmBuilder() {
         Rpath = rpath.substr(0, rpath.size()-6);
     }
@@ -120,5 +126,6 @@ namespace kale {
         auto res = system(cmd.c_str());
         return res;
     }
+#endif
 }
 
