@@ -253,6 +253,8 @@ int main(int argc, char *argv[]) {
         cmd.append(fileName).append(" ");
         CppBuilder v(outFile);
         prog->accept(v);
+
+
         outFile.close();
     }
     cmd.append("-L").append(rpath).append("/../lib ").append("-lkale_std ")
