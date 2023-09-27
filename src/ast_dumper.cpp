@@ -50,8 +50,6 @@ namespace kale {
             "Int",
             "Uint",
             "Long",
-
-
             "ULong",
             "Struct",
             "Pointer"
