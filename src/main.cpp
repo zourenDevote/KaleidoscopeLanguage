@@ -6,6 +6,7 @@
 #include "ast_dumper.h"
 #include "cxxopts.hpp"
 #include "parser.h"
+#include "cpp_builder.h"
 
 #ifndef __USE_C_MODULE_TRANSLATION_METHOD__
 #include "ir_builder.h"
@@ -20,6 +21,7 @@
 
 #include <memory>
 #include <iostream>
+#include <fstream>
 
 
 using namespace cxxopts;
@@ -132,7 +134,6 @@ int parseCmdArgs(int argc, char *argv[]) {
 
 
 int main(int argc, char *argv[]) {
-
     /// parse command line option
     if(parseCmdArgs(argc, argv)) {
         std::cerr << "Exit with error!" << std::endl;
@@ -241,7 +242,32 @@ int main(int argc, char *argv[]) {
     }
 #else
     // 翻译成C代码然后编译成可执行文件
-#endif
+    std::string rpath = argv[0],cmd;
+    std::string fileName;
+    rpath = rpath.substr(0,rpath.size() - 6);
+    cmd = "gcc ";
+    int index = 0;
+    for(auto *prog : ProgramList) {
+        fileName = "file" + std::to_string(index++) + ".c";
+        std::ofstream outFile( fileName);
+        cmd.append(fileName).append(" ");
+        CppBuilder v(outFile);
+        prog->accept(v);
+        outFile.close();
+    }
+    cmd.append("-L").append(rpath).append("/../lib ").append("-lkale_std ")
+            .append("-o ").append(OutputFileName);
+    int ret = system(cmd.c_str());
+    if(ret == 0){
+        if(CompileAndRun){
+            cmd = "./" + OutputFileName;
+            return system(cmd.c_str());
+        };
+    }else{
+        std::cerr << "Having error" << std::endl;
+        return ret;
+    }
 
+#endif
     return 0;
 }
