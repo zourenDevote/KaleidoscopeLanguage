@@ -119,6 +119,7 @@ namespace kale {
 
         std::string cmd = "clang++-15 ";
         cmd += "-L" + Rpath + "/../lib ";
+        //clang++-15 -L/mnt/d/compiler/build/bin/../lib modle0.ll -lkale_std -o a.out
         for(auto &file : ObjFileList) {
             cmd += file + " ";
         }

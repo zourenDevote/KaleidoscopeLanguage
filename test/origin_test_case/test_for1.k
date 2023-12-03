@@ -1,4 +1,3 @@
-
 def main() : int {
     int i, j;
     i = 10;
@@ -11,4 +10,3 @@ def main() : int {
     PrintLn("");
     return 0;
 }
-

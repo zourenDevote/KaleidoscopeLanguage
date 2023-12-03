@@ -68,6 +68,9 @@ public:
 
 public:
     virtual KAstId getClassId() = 0;
+    virtual const char* getAstName(){
+        return "";
+    }
 };
 
 
@@ -92,6 +95,7 @@ public:
     INSERT_ENUM(ProgramId)
     static bool canCastTo(KAstId id) { return (id == ProgramId); }
 
+    INSERT_ENUM_NAME(ProgramId)
 public:
     ProgramAST() = default;
     explicit ProgramAST(const LineNo&, ASTBase *parent = nullptr);

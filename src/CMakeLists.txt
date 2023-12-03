@@ -14,6 +14,7 @@ if(BUILD_WITH_CMODEL)
             test/token_parser_test.cpp
             main.cpp
             asm_builder.cpp
+            cpp_builder.cpp
     )
 
     add_executable(${PROJECT_NAME} ${SRC_FILE})
@@ -82,6 +83,7 @@ else ()
             main.cpp
             asm_builder.cpp
             type_checker.cpp
+
     )
 
     add_executable(${PROJECT_NAME} ${SRC_FILE})
